@@ -235,10 +235,7 @@ async def extract(
         if raw:
             image_b64 = image_data_url(raw, image.content_type or content_type)
     else:
-        try:
-            body = await request.json()
-        except json.JSONDecodeError:
-            body = {}
+        body = await _json_body(request)
         used_sample = bool(body.get("used_sample"))
         if body.get("image_base64"):
             image_b64 = body["image_base64"]

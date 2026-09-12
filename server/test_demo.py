@@ -176,6 +176,15 @@ def test_http_judge_script() -> None:
     assert called["state"]["phase"] == "calling"
     assert client.post("/api/action", json={"text": "reset"}).json()["phase"] == "empty"
 
+    main.game.reset()
+    form = client.post(
+        "/api/extract",
+        content=b"used_sample=true",
+        headers={"content-type": "application/x-www-form-urlencoded"},
+    )
+    assert form.status_code == 200
+    main.game.reset()
+
 
 if __name__ == "__main__":
     test_no_send_surface()
