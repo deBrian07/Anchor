@@ -237,10 +237,9 @@ async def extract(
     else:
         body = await _json_body(request)
         used_sample = bool(body.get("used_sample"))
-        if body.get("image_base64"):
-            image_b64 = body["image_base64"]
-            if not image_b64.startswith("data:"):
-                image_b64 = f"data:image/jpeg;base64,{image_b64}"
+        raw_b64 = body.get("image_base64")
+        if isinstance(raw_b64, str) and raw_b64:
+            image_b64 = raw_b64 if raw_b64.startswith("data:") else f"data:image/jpeg;base64,{raw_b64}"
 
     if (
         used_sample

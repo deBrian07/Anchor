@@ -165,6 +165,18 @@ def test_extract_does_not_reset_live_demo() -> None:
     main.game.reset()
 
 
+def test_extract_rejects_non_string_image() -> None:
+    from fastapi.testclient import TestClient
+
+    import main
+
+    main.game.reset()
+    client = TestClient(main.app)
+    res = client.post("/api/extract", json={"image_base64": 12345, "used_sample": False})
+    assert res.status_code == 200
+    main.game.reset()
+
+
 def test_constants_match_fixture_clock() -> None:
     assert T40 == 15 * 3600 + 50 * 60
     assert ALL_ABOARD == 16 * 3600 + 30 * 60
@@ -218,6 +230,7 @@ if __name__ == "__main__":
     test_skip_before_sample_is_inert()
     test_hm_accepts_seconds()
     test_extract_does_not_reset_live_demo()
+    test_extract_rejects_non_string_image()
     test_constants_match_fixture_clock()
     test_http_judge_script()
     print("demo checks passed")
