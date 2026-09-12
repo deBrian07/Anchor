@@ -33,9 +33,9 @@ export default function App() {
 
       {phase === 'empty' || !cruise ? (
         <section className="waiting">
-          <p className="empty-kicker">Still ashore. The ship is leaving.</p>
+          <p className="empty-kicker">still ashore. ship's leaving.</p>
           <h2>REJOIN</h2>
-          <p className="empty-copy">Load the mock Royal Caribbean sailing.</p>
+          <p className="empty-copy">want the mock sailing?</p>
           <div className="empty-actions">
             <button type="button" className="primary" onClick={() => void act('sample')}>
               Use sample planner

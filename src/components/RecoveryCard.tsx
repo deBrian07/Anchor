@@ -13,8 +13,8 @@ export function RecoveryCard({ cruise, phase, onCall, onReset }: Props) {
 
   return (
     <section className={`recovery ${calling ? 'calling' : ''}`}>
-      <p className="recovery-kicker">Missed the ship · {cruise.cruise_line} port agent</p>
-      <h2>Call the pier desk</h2>
+      <p className="recovery-kicker">you missed it · {cruise.cruise_line}</p>
+      <h2>call the pier desk</h2>
       <ul className="facts">
         <li>
           <span>Passport</span>
@@ -50,7 +50,7 @@ export function RecoveryCard({ cruise, phase, onCall, onReset }: Props) {
       </a>
 
       <div className="script">
-        <p className="script-label">What to tell them</p>
+        <p className="script-label">say this</p>
         <ol>
           <li>
             {cruise.ship}, booking {cruise.passenger.booking_name}, cabin {cruise.passenger.cabin}.
@@ -62,7 +62,7 @@ export function RecoveryCard({ cruise, phase, onCall, onReset }: Props) {
       </div>
 
       <button type="button" className="reset-demo" onClick={onReset}>
-        Reset demo
+        start over
       </button>
     </section>
   )
