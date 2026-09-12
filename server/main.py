@@ -322,9 +322,6 @@ async def recover():
                 if parsed.get(k):
                     agent[k] = parsed[k]
             payload["source"] = "grok"
-            if game.cruise:
-                game.cruise["port_agent"] = agent
-                await fanout()
     except Exception:
         pass
     return payload

@@ -177,6 +177,28 @@ def test_extract_rejects_non_string_image() -> None:
     main.game.reset()
 
 
+def test_recover_does_not_mutate_live_cruise() -> None:
+    from fastapi.testclient import TestClient
+
+    import main
+
+    main.game.reset()
+    client = TestClient(main.app)
+    phone = client.post("/api/action", json={"text": "sample"}).json()["cruise"]["port_agent"]["phone"]
+    client.post("/api/recover")
+    assert client.get("/api/state").json()["cruise"]["port_agent"]["phone"] == phone
+    main.game.reset()
+
+
+def test_merge_cruise_partial_keeps_map() -> None:
+    g = Game()
+    g.merge_cruise({"ship": "X"})
+    snap = g.snapshot()
+    assert snap["cruise"]["ship"] == "X"
+    assert snap["cruise"]["port"]
+    assert snap["you"] is not None
+
+
 def test_constants_match_fixture_clock() -> None:
     assert T40 == 15 * 3600 + 50 * 60
     assert ALL_ABOARD == 16 * 3600 + 30 * 60
@@ -231,6 +253,8 @@ if __name__ == "__main__":
     test_hm_accepts_seconds()
     test_extract_does_not_reset_live_demo()
     test_extract_rejects_non_string_image()
+    test_recover_does_not_mutate_live_cruise()
+    test_merge_cruise_partial_keeps_map()
     test_constants_match_fixture_clock()
     test_http_judge_script()
     print("demo checks passed")

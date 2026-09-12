@@ -10,6 +10,7 @@ type Props = {
 }
 
 export function DemoPanel({ nowSec, skipSec = DEPARTED_SEC, place, onTime, onPlace }: Props) {
+  const sliderMax = Math.max(SLIDER_MAX, skipSec, nowSec)
   return (
     <aside className="demo" aria-label="Demo controls">
       <header>
@@ -32,9 +33,9 @@ export function DemoPanel({ nowSec, skipSec = DEPARTED_SEC, place, onTime, onPla
         <input
           type="range"
           min={SLIDER_MIN}
-          max={SLIDER_MAX}
+          max={sliderMax}
           step={60}
-          value={Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, nowSec))}
+          value={Math.min(sliderMax, Math.max(SLIDER_MIN, nowSec))}
           onChange={(e) => onTime(Number(e.target.value))}
         />
       </label>

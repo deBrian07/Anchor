@@ -217,11 +217,19 @@ class Game:
         return [line, "You are in town. 12 min walk. All aboard in 40 min."]
 
     def merge_cruise(self, cruise: dict[str, Any], photo: str | None = None) -> list[str]:
-        self.cruise = deepcopy(cruise)
+        base = _fixture()
+        if cruise:
+            incoming_map = cruise.get("map")
+            base.update(cruise)
+            if isinstance(incoming_map, dict):
+                base["map"] = {**_fixture()["map"], **incoming_map}
+            else:
+                base["map"] = _fixture()["map"]
+        self.cruise = base
         if photo:
             self.photo = photo
             self._bubble("me", "Planner photo", photo=photo)
-        return self.arm_sample() if not cruise else self._announce()
+        return self._announce()
 
     def _announce(self) -> list[str]:
         c = self.cruise
