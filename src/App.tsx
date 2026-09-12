@@ -3,6 +3,7 @@ import { DemoPanel } from './components/DemoPanel'
 import { PortMap } from './components/PortMap'
 import { RecoveryCard } from './components/RecoveryCard'
 import { useBot } from './lib/sync'
+import { parseHm } from './lib/time'
 import type { Place } from './types'
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
             allAboard={cruise.all_aboard_local}
             departure={cruise.departure_local}
             walkMin={state?.walk_min ?? 12}
+            departed={Boolean(state?.departed)}
           />
           <PortMap cruise={cruise} you={you} departed={Boolean(state?.departed)} onYouChange={() => undefined} />
         </main>
@@ -79,6 +81,7 @@ export default function App() {
       {cruise && !state?.show_recovery ? (
         <DemoPanel
           nowSec={state?.now_sec ?? 15 * 3600 + 50 * 60}
+          skipSec={parseHm(cruise.departure_local) + 60}
           place={(state?.place as Place) ?? 'town'}
           onTime={(sec) => void demo({ now_sec: sec })}
           onPlace={(place) => void demo({ place })}

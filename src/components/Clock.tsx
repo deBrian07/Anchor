@@ -7,15 +7,17 @@ type Props = {
   allAboard: string
   departure: string
   walkMin: number
+  departed: boolean
 }
 
-export function Clock({ phase, nowSec, allAboard, departure, walkMin }: Props) {
+export function Clock({ phase, nowSec, allAboard, departure, walkMin, departed }: Props) {
   const allSec = parseHm(allAboard)
   const depSec = parseHm(departure)
   const remainAll = allSec - nowSec
   const remainDep = depSec - nowSec
   const hot = phase === 'late' || phase === 'missed' || phase === 'calling'
-  const dead = phase === 'missed' || phase === 'calling'
+  const dead = departed
+  const allClosed = remainAll <= 0 || departed
   const now = analogAngles(nowSec)
   const allArm = analogAngles(allSec)
   const depArm = analogAngles(depSec)
@@ -39,7 +41,7 @@ export function Clock({ phase, nowSec, allAboard, departure, walkMin }: Props) {
             y1="100"
             x2={100 + Math.sin((allArm.hour * Math.PI) / 180) * 52}
             y2={100 - Math.cos((allArm.hour * Math.PI) / 180) * 52}
-            className={`arm all-arm ${dead ? 'arm-dead' : ''}`}
+            className={`arm all-arm ${allClosed ? 'arm-dead' : ''}`}
           />
           <line
             x1="100"
@@ -61,10 +63,10 @@ export function Clock({ phase, nowSec, allAboard, departure, walkMin }: Props) {
       </div>
 
       <div className="clock-digits">
-        <div className={`deadline ${dead ? 'struck' : ''}`}>
+        <div className={`deadline ${allClosed ? 'struck' : ''}`}>
           <span className="kicker">All aboard</span>
           <strong>{allAboard}</strong>
-          <em>{dead ? 'CLOSED' : formatCountdown(remainAll)}</em>
+          <em>{allClosed ? 'CLOSED' : formatCountdown(remainAll)}</em>
         </div>
         <div className="deadline sail">
           <span className="kicker">Ship leaves</span>

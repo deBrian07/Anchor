@@ -95,10 +95,10 @@ class Game:
             loc = cruise["map"][self.place if self.place in cruise["map"] else "town"]
             you = {"lat": loc["lat"], "lng": loc["lng"]}
         phase = _phase(cruise, self.now_sec, self.place, self.calling)
-        departed = phase in {"missed", "calling"}
+        departed = bool(cruise and self.now_sec >= _sails(cruise))
         if departed and self.missed_at and time.time() - self.missed_at >= 2.2:
             self.recovery_ready = True
-        show_recovery = phase == "calling" or (departed and self.recovery_ready)
+        show_recovery = (phase == "calling" and departed) or (departed and self.recovery_ready)
         return {
             "phase": phase,
             "now_sec": self.now_sec,
@@ -243,6 +243,8 @@ class Game:
         return [line, "You are in town. 12 min walk. All aboard in 40 min."]
 
     def mark_calling(self) -> list[str]:
+        if not self.cruise or self.now_sec < _sails(self.cruise):
+            return []
         self.calling = True
         self.recovery_ready = True
         replies = self.recovery_texts()
@@ -290,7 +292,8 @@ class Game:
             return self.set_place("town")
         if key in SKIP:
             self._bubble("me", raw)
-            return self.set_time(DEPARTED)
+            skip_at = _sails(self.cruise) + 60 if self.cruise else DEPARTED
+            return self.set_time(skip_at)
         if key in CALL:
             self._bubble("me", raw)
             return self.mark_calling()

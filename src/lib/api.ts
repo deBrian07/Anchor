@@ -61,7 +61,7 @@ export async function extractPlanner(file: File | null, usedSample: boolean): Pr
       ...base,
       ...data,
       map: data.map ?? base.map,
-      source_tag: data.source === 'grok' ? 'grok' : 'fixture',
+      source_tag: data.source_tag === 'grok' ? 'grok' : 'fixture',
     }
   } catch {
     return { ...base, source_tag: 'fixture' }

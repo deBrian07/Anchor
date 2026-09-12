@@ -103,6 +103,39 @@ def test_tick_past_sails_shows_recovery() -> None:
     assert snap["show_recovery"] is True
 
 
+def test_early_call_does_not_sail() -> None:
+    g = Game()
+    g.arm_sample()
+    assert g.mark_calling() == []
+    snap = g.snapshot()
+    assert snap["phase"] == "armed"
+    assert snap["departed"] is False
+    assert snap["show_recovery"] is False
+    assert snap["calling"] is False
+
+
+def test_skip_follows_extracted_departure() -> None:
+    g = Game()
+    g.arm_sample()
+    g.cruise["departure_local"] = "18:00"
+    g.handle_text("skip")
+    snap = g.snapshot()
+    assert snap["now_sec"] == 18 * 3600 + 60
+    assert snap["phase"] == "missed"
+    assert snap["show_recovery"] is True
+
+
+def test_after_all_aboard_before_sail_is_late() -> None:
+    g = Game()
+    g.arm_sample()
+    g.set_place("ruins")
+    g.set_time(16 * 3600 + 45 * 60)
+    snap = g.snapshot()
+    assert snap["phase"] == "late"
+    assert snap["departed"] is False
+    assert snap["show_recovery"] is False
+
+
 def test_skip_before_sample_is_inert() -> None:
     g = Game()
     g.set_time(DEPARTED)
@@ -148,6 +181,9 @@ if __name__ == "__main__":
     test_judge_script()
     test_extracted_times_drive_phase()
     test_tick_past_sails_shows_recovery()
+    test_early_call_does_not_sail()
+    test_skip_follows_extracted_departure()
+    test_after_all_aboard_before_sail_is_late()
     test_skip_before_sample_is_inert()
     test_constants_match_fixture_clock()
     test_http_judge_script()

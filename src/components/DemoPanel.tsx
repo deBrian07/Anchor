@@ -3,12 +3,13 @@ import type { Place } from '../types'
 
 type Props = {
   nowSec: number
+  skipSec?: number
   place: Place
   onTime: (sec: number) => void
   onPlace: (place: Exclude<Place, 'custom'>) => void
 }
 
-export function DemoPanel({ nowSec, place, onTime, onPlace }: Props) {
+export function DemoPanel({ nowSec, skipSec = DEPARTED_SEC, place, onTime, onPlace }: Props) {
   return (
     <aside className="demo" aria-label="Demo controls">
       <header>
@@ -22,8 +23,8 @@ export function DemoPanel({ nowSec, place, onTime, onPlace }: Props) {
         <button type="button" className={nowSec === T5_SEC ? 'on' : ''} onClick={() => onTime(T5_SEC)}>
           T-5min
         </button>
-        <button type="button" className={nowSec >= DEPARTED_SEC ? 'on' : ''} onClick={() => onTime(DEPARTED_SEC)}>
-          Skip to 17:01
+        <button type="button" className={nowSec >= skipSec ? 'on' : ''} onClick={() => onTime(skipSec)}>
+          Skip to {formatHm(skipSec)}
         </button>
       </div>
       <label className="slider">
