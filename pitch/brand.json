@@ -1,0 +1,28 @@
+{
+  "font": "Inter",
+  "font_file": "/usr/share/fonts/truetype/macos/Inter-SemiBold.ttf",
+  "colors": {
+    "primary": "E8C36A",
+    "text": "F2F2F7",
+    "outline": "0C1118",
+    "background": "0C1118",
+    "accent": "E8C36A"
+  },
+  "logo": "slides/logo.png",
+  "logo_position": "top-right",
+  "logo_scale": 140,
+  "logo_opacity": 0.92,
+  "safe_margin": 56,
+  "caption": {
+    "size": 42,
+    "position": "bottom",
+    "animate": "pop",
+    "karaoke": false,
+    "bold": true,
+    "outline": 2
+  },
+  "loudness": {
+    "lufs": -14,
+    "tp": -1
+  }
+}

@@ -13,6 +13,14 @@ dist-ssr
 *.local
 .env
 server/.venv
+pitch/work/
+pitch/out/*
+!pitch/out/.gitkeep
+pitch/assets/*.mp4
+pitch/assets/*.wav
+pitch/assets/*.mp3
+pitch/assets/*.m4a
+pitch/assets/*.mov
 .venv
 __pycache__/
 *.pyc
