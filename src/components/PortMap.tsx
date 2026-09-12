@@ -18,8 +18,10 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
   const youRef = useRef<L.Marker | null>(null)
   const shipRef = useRef<L.Marker | null>(null)
   const cruiseRef = useRef(cruise)
+  const youRefPos = useRef(you)
   const onYouChangeRef = useRef(onYouChange)
   cruiseRef.current = cruise
+  youRefPos.current = you
   onYouChangeRef.current = onYouChange
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
 
     const startYou = cruiseRef.current.map.town
     const youMarker = L.marker([startYou.lat, startYou.lng], {
-      draggable: true,
+      draggable: false,
       icon: L.divIcon({ className: 'you-icon', html: YOU_HTML, iconSize: [22, 22], iconAnchor: [11, 11] }),
     }).addTo(map)
     youMarker.on('dragend', () => {
@@ -114,8 +116,10 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
     const ship = shipRef.current
     const map = mapRef.current
     if (!ship || !map) return
-    const start = L.latLng(cruise.map.pier.lat, cruise.map.pier.lng - 0.0014)
-    const end = L.latLng(cruise.map.ship_departed.lat, cruise.map.ship_departed.lng)
+    const mapPts = cruiseRef.current.map
+    const youNow = youRefPos.current
+    const start = L.latLng(mapPts.pier.lat, mapPts.pier.lng - 0.0014)
+    const end = L.latLng(mapPts.ship_departed.lat, mapPts.ship_departed.lng)
     if (!departed) {
       ship.setLatLng(start)
       const el = ship.getElement()
@@ -141,12 +145,12 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
       [
         [start.lat, start.lng],
         [end.lat, end.lng],
-        [you.lat, you.lng],
+        [youNow.lat, youNow.lng],
       ],
       { padding: [48, 48], animate: true },
     )
     return () => cancelAnimationFrame(raf)
-  }, [departed, cruise, you.lat, you.lng])
+  }, [departed])
 
   return (
     <section className="map-panel">

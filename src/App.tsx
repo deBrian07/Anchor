@@ -31,7 +31,7 @@ export default function App() {
         <section className="waiting">
           <p className="empty-kicker">Still ashore. The ship is leaving.</p>
           <h2>REJOIN</h2>
-          <p className="empty-copy">Load the mock Royal Caribbean sailing, or drop a planner photo.</p>
+          <p className="empty-copy">Load the mock Royal Caribbean sailing.</p>
           <div className="empty-actions">
             <button type="button" className="primary" onClick={() => void act('sample')}>
               Use sample planner

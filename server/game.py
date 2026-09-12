@@ -36,14 +36,30 @@ def _walk(place: str) -> int:
     return {"pier": 3, "town": 12, "ruins": 45}.get(place, 12)
 
 
+def _hm(hm: str, fallback: int) -> int:
+    try:
+        h, m = str(hm).split(":")
+        return int(h) * 3600 + int(m) * 60
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _aboard(cruise: dict) -> int:
+    return _hm(str(cruise.get("all_aboard_local", "")), ALL_ABOARD)
+
+
+def _sails(cruise: dict) -> int:
+    return _hm(str(cruise.get("departure_local", "")), SAILS)
+
+
 def _phase(cruise: dict | None, now_sec: int, place: str, calling: bool) -> str:
     if not cruise:
         return "empty"
     if calling:
         return "calling"
-    if now_sec >= SAILS:
+    if now_sec >= _sails(cruise):
         return "missed"
-    remain = (ALL_ABOARD - now_sec) / 60
+    remain = (_aboard(cruise) - now_sec) / 60
     if _walk(place) > remain:
         return "late"
     return "armed"
@@ -135,14 +151,15 @@ class Game:
     def set_time(self, now_sec: int) -> list[str]:
         self.now_sec = int(now_sec)
         replies: list[str] = []
-        if self.cruise and self.now_sec >= SAILS:
+        sails = _sails(self.cruise) if self.cruise else SAILS
+        if self.cruise and self.now_sec >= sails:
             if self.missed_at is None:
                 self.missed_at = time.time()
                 self._log("alert", "ship departed")
                 self._bubble("them", "The ship is leaving the pier.")
                 replies.append("The ship is leaving the pier.")
             self.recovery_ready = True
-        if self.now_sec < SAILS:
+        if self.now_sec < sails:
             self.missed_at = None
             self.recovery_ready = False
             self.calling = False
@@ -163,7 +180,7 @@ class Game:
     def _after_move(self) -> list[str]:
         replies: list[str] = []
         if self.cruise and _phase(self.cruise, self.now_sec, self.place, False) == "late":
-            remain = max(0, round((ALL_ABOARD - self.now_sec) / 60))
+            remain = max(0, round((_aboard(self.cruise) - self.now_sec) / 60))
             self._log("warn", f"you are too far: {_walk(self.place)} min walk, {remain} min left")
             msg = "You cannot make all-aboard from here. LEAVE NOW."
             self._bubble("them", msg)
