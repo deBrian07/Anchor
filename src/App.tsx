@@ -68,7 +68,12 @@ export default function App() {
       ) : null}
 
       {cruise && state?.show_recovery ? (
-        <RecoveryCard cruise={cruise} phase={phase} onCall={() => void call()} />
+        <RecoveryCard
+          cruise={cruise}
+          phase={phase}
+          onCall={() => void call()}
+          onReset={() => void act('reset')}
+        />
       ) : null}
 
       {state?.show_recovery ? null : (

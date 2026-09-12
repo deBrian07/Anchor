@@ -4,9 +4,10 @@ type Props = {
   cruise: Cruise
   phase: Phase
   onCall: () => void
+  onReset: () => void
 }
 
-export function RecoveryCard({ cruise, phase, onCall }: Props) {
+export function RecoveryCard({ cruise, phase, onCall, onReset }: Props) {
   const agent = cruise.port_agent
   const calling = phase === 'calling'
 
@@ -59,6 +60,10 @@ export function RecoveryCard({ cruise, phase, onCall }: Props) {
           <li>Where do I meet you.</li>
         </ol>
       </div>
+
+      <button type="button" className="reset-demo" onClick={onReset}>
+        Reset demo
+      </button>
     </section>
   )
 }

@@ -2,7 +2,7 @@
 
 Clock + map for a passenger still ashore. The ship leaves. One tap calls the port agent.
 
-This app does not read iMessage, and it does not text anyone.
+There is no iMessage server. `npm run api` is the FastAPI clock/map backend. It does not read iMessage, and it does not text anyone.
 
 If send is ever wired later, it can only reach numbers in `data/allowlist.json` (empty = nobody), and only after that number texts first in the same session.
 

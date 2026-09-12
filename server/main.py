@@ -49,6 +49,11 @@ async def bot_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    print(
+        "Rejoin API on 127.0.0.1:8000 — clock/map only. "
+        "Does not read or send phone messages.",
+        flush=True,
+    )
     task = asyncio.create_task(bot_loop())
     yield
     task.cancel()
@@ -165,9 +170,17 @@ def state():
     return game.snapshot()
 
 
+async def _json_body(request: Request) -> dict:
+    try:
+        body = await request.json()
+    except Exception:
+        return {}
+    return body if isinstance(body, dict) else {}
+
+
 @app.post("/api/action")
 async def action(request: Request):
-    body = await request.json()
+    body = await _json_body(request)
     game.handle_text(str(body.get("text") or ""))
     await fanout()
     return game.snapshot()
@@ -175,9 +188,12 @@ async def action(request: Request):
 
 @app.post("/api/demo")
 async def demo(request: Request):
-    body = await request.json()
+    body = await _json_body(request)
     if "now_sec" in body:
-        game.set_time(int(body["now_sec"]))
+        try:
+            game.set_time(int(body["now_sec"]))
+        except (TypeError, ValueError):
+            pass
     if body.get("place"):
         game.set_place(str(body["place"]))
     await fanout()
@@ -199,7 +215,7 @@ async def ws(sock: WebSocket):
     try:
         while True:
             await sock.receive_text()
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, Exception):
         clients.discard(sock)
 
 

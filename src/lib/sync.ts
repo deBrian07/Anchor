@@ -6,24 +6,60 @@ export function useBot() {
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
-    void fetch('/api/state')
-      .then((r) => r.json())
-      .then((data) => setState(data as BotState))
-      .catch(() => setState(null))
+    let cancelled = false
+    let socket: WebSocket | null = null
+    let retry = 0
+    let timer: ReturnType<typeof setTimeout> | undefined
 
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    const socket = new WebSocket(`${proto}://${location.host}/api/ws`)
-    socket.onopen = () => setConnected(true)
-    socket.onclose = () => setConnected(false)
-    socket.onerror = () => setConnected(false)
-    socket.onmessage = (ev) => {
+    async function loadState() {
       try {
-        setState(JSON.parse(ev.data) as BotState)
+        const res = await fetch('/api/state')
+        if (!res.ok || cancelled) return
+        setState((await res.json()) as BotState)
       } catch {
-        /* ignore */
+        /* API is down; socket retry will pick it up */
       }
     }
-    return () => socket.close()
+
+    function connect() {
+      if (cancelled) return
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+      const ws = new WebSocket(`${proto}://${location.host}/api/ws`)
+      socket = ws
+      ws.onopen = () => {
+        if (cancelled || socket !== ws) return
+        setConnected(true)
+        retry = 0
+        void loadState()
+      }
+      ws.onclose = () => {
+        if (cancelled) return
+        if (socket === ws) setConnected(false)
+        const delay = Math.min(4000, 400 * 2 ** retry)
+        retry += 1
+        timer = setTimeout(connect, delay)
+      }
+      ws.onerror = () => {
+        ws.close()
+      }
+      ws.onmessage = (ev) => {
+        if (cancelled || socket !== ws) return
+        try {
+          setState(JSON.parse(ev.data) as BotState)
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
+    void loadState()
+    connect()
+
+    return () => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
+      socket?.close()
+    }
   }, [])
 
   async function act(text: string) {

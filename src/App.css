@@ -449,6 +449,18 @@
   line-height: 1.45;
 }
 
+.reset-demo {
+  margin-top: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #8b8678;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
 .demo {
   position: fixed;
   right: 16px;
