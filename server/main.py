@@ -1,14 +1,23 @@
+from __future__ import annotations
+
+import asyncio
 import base64
 import json
 import os
 import re
+import socket
+import subprocess
 from copy import deepcopy
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Optional
 
 import httpx
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import FastAPI, File, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+
+from game import game
+from imessage import db_readable, latest_row_id, new_inbound, peer, send_text, status as imessage_status
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "cruise.json"
@@ -19,11 +28,54 @@ TEXT_MODELS = ("grok-4-fast-reasoning", "grok-2-vision-1212", "grok-2-vision")
 EXTRACT_KEYS = ("ship", "port", "all_aboard_local", "departure_local", "next_port", "timezone")
 TIMEOUT = 12.0
 
-app = FastAPI()
+clients: set[WebSocket] = set()
+
+
+async def fanout() -> None:
+    snap = game.snapshot()
+    dead: list[WebSocket] = []
+    for ws in list(clients):
+        try:
+            await ws.send_json(snap)
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        clients.discard(ws)
+
+
+def deliver(replies: list[str], handle: str | None = None) -> None:
+    to = peer() or handle
+    if not to:
+        return
+    for line in replies:
+        send_text(to, line)
+
+
+async def bot_loop() -> None:
+    last = latest_row_id()
+    while True:
+        await asyncio.sleep(1)
+        game.tick()
+        await fanout()
+        last, msgs = await asyncio.to_thread(new_inbound, last)
+        for msg in msgs:
+            replies = game.handle_text(msg["text"])
+            await asyncio.to_thread(deliver, replies, msg.get("handle"))
+            await fanout()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    task = asyncio.create_task(bot_loop())
+    yield
+    task.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -100,9 +152,27 @@ def image_data_url(raw: bytes, content_type: str = "image/jpeg") -> str:
     return f"data:{content_type};base64,{b64}"
 
 
+def lan_ips() -> list[str]:
+    found: list[str] = []
+    for iface in ("en0", "en1"):
+        try:
+            r = subprocess.run(["ipconfig", "getifaddr", iface], capture_output=True, text=True)
+            ip = r.stdout.strip()
+            if ip:
+                found.append(ip)
+        except Exception:
+            pass
+    if not found:
+        try:
+            found.append(socket.gethostbyname(socket.gethostname()))
+        except Exception:
+            pass
+    return found
+
+
 EXTRACT_PROMPT = (
     "Extract ONLY these fields from the cruise schedule image as JSON with no other keys: "
-    'ship, port, all_aboard_local, departure_local, next_port, timezone. '
+    "ship, port, all_aboard_local, departure_local, next_port, timezone. "
     "Times must be HH:MM 24-hour. Reply with raw JSON only."
 )
 
@@ -123,6 +193,69 @@ def company():
         with open(COMPANY_PATH, encoding="utf-8") as f:
             return json.load(f)
     return load_fixture()
+
+
+@app.get("/api/state")
+def state():
+    return game.snapshot()
+
+
+@app.get("/api/host")
+def host():
+    ips = lan_ips()
+    return {
+        "ips": ips,
+        "phone_url": f"http://{ips[0]}:5173" if ips else "http://localhost:5173",
+        "imessage": imessage_status(),
+        "db_readable": db_readable(),
+    }
+
+
+@app.post("/api/imessage/test")
+async def imessage_test():
+    to = peer()
+    if not to:
+        return {"ok": False, "error": "Set REJOIN_PEER to your iPhone iMessage."}
+    err = send_text(to, "Rejoin is live on your Mac. Text sample, ruins, or skip.")
+    return {"ok": err is None, "error": err, "peer": to}
+
+
+@app.post("/api/inbox")
+async def inbox(request: Request):
+    body = await request.json()
+    replies = game.handle_text(str(body.get("text") or ""))
+    await fanout()
+    return {"replies": replies, "state": game.snapshot()}
+
+
+@app.post("/api/demo")
+async def demo(request: Request):
+    body = await request.json()
+    if "now_sec" in body:
+        game.set_time(int(body["now_sec"]))
+    if body.get("place"):
+        game.set_place(str(body["place"]))
+    await fanout()
+    return game.snapshot()
+
+
+@app.post("/api/call")
+async def call():
+    replies = game.mark_calling()
+    await fanout()
+    return {"replies": replies, "state": game.snapshot()}
+
+
+@app.websocket("/api/ws")
+async def ws(sock: WebSocket):
+    await sock.accept()
+    clients.add(sock)
+    await sock.send_json(game.snapshot())
+    try:
+        while True:
+            await sock.receive_text()
+    except WebSocketDisconnect:
+        clients.discard(sock)
 
 
 @app.post("/api/extract")
@@ -157,6 +290,8 @@ async def extract(
         or not os.environ.get("XAI_API_KEY")
         or not image_b64
     ):
+        replies = game.arm_sample()
+        await fanout()
         return fixture_response()
 
     messages = [
@@ -171,12 +306,23 @@ async def extract(
     try:
         content = await xai_chat(messages, VISION_MODELS)
         if not content:
+            game.arm_sample()
+            await fanout()
             return fixture_response()
         parsed = parse_json_blob(content)
         if not parsed:
+            game.arm_sample()
+            await fanout()
             return fixture_response()
-        return merge_extract(load_fixture(), parsed)
+        merged = merge_extract(load_fixture(), parsed)
+        game.cruise = merged
+        game.photo = "/sample-planner.png"
+        game._announce()
+        await fanout()
+        return merged
     except Exception:
+        game.arm_sample()
+        await fanout()
         return fixture_response()
 
 
@@ -215,6 +361,9 @@ async def recover():
                 if parsed.get(k):
                     agent[k] = parsed[k]
             payload["source"] = "grok"
+            if game.cruise:
+                game.cruise["port_agent"] = agent
+                await fanout()
     except Exception:
         pass
     return payload
