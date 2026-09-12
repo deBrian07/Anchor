@@ -55,7 +55,7 @@ export function RecoveryCard({ cruise, phase, onCall, onReset }: Props) {
           <li>
             {cruise.ship}, booking {cruise.passenger.booking_name}, cabin {cruise.passenger.cabin}.
           </li>
-          <li>I missed all-aboard at Cozumel. Passport is in the cabin.</li>
+          <li>I missed all-aboard at {cruise.port}. Passport is in the cabin.</li>
           <li>I need the next-port join instructions.</li>
           <li>Where do I meet you.</li>
         </ol>

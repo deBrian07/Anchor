@@ -144,6 +144,7 @@ class Game:
             phase = _phase(self.cruise, self.now_sec, self.place, self.calling)
             if phase == "missed" and self.missed_at is None:
                 self.missed_at = time.time()
+                self.recovery_ready = True
                 self._log("alert", "ship departed")
                 self._bubble("them", "The ship is leaving the pier.")
         return self._emit()
@@ -261,7 +262,7 @@ class Game:
             f"Next port: {c['next_port']} {c['next_port_arrival_note']}.",
             f"Call {a['name']} — {a['phone_display']} ({a['role']}).",
             f"Say: {c['ship']}, {p['booking_name']}, cabin {p['cabin']}. "
-            f"I missed all-aboard at Cozumel. Passport is in the cabin. "
+            f"I missed all-aboard at {c['port']}. Passport is in the cabin. "
             f"I need next-port join instructions. Where do I meet you.",
             f"Fallback: {c['fallback_transport']}",
         ]

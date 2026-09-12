@@ -74,7 +74,7 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
     }).addTo(map)
     shipRef.current = ship
 
-    const startYou = cruiseRef.current.map.town
+    const startYou = youRefPos.current
     const youMarker = L.marker([startYou.lat, startYou.lng], {
       draggable: false,
       icon: L.divIcon({ className: 'you-icon', html: YOU_HTML, iconSize: [22, 22], iconAnchor: [11, 11] }),

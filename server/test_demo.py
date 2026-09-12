@@ -92,6 +92,17 @@ def test_extracted_times_drive_phase() -> None:
     assert snap["show_recovery"] is True
 
 
+def test_tick_past_sails_shows_recovery() -> None:
+    g = Game()
+    g.arm_sample()
+    g.now_sec = SAILS - 1
+    g.tick()
+    snap = g.snapshot()
+    assert snap["now_sec"] == SAILS
+    assert snap["phase"] == "missed"
+    assert snap["show_recovery"] is True
+
+
 def test_skip_before_sample_is_inert() -> None:
     g = Game()
     g.set_time(DEPARTED)
@@ -136,6 +147,7 @@ if __name__ == "__main__":
     test_no_send_surface()
     test_judge_script()
     test_extracted_times_drive_phase()
+    test_tick_past_sails_shows_recovery()
     test_skip_before_sample_is_inert()
     test_constants_match_fixture_clock()
     test_http_judge_script()
