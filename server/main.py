@@ -210,9 +210,9 @@ async def call():
 @app.websocket("/api/ws")
 async def ws(sock: WebSocket):
     await sock.accept()
-    clients.add(sock)
-    await sock.send_json(game.snapshot())
     try:
+        await sock.send_json(game.snapshot())
+        clients.add(sock)
         while True:
             await sock.receive_text()
     except (WebSocketDisconnect, Exception):

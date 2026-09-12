@@ -156,6 +156,7 @@ def test_http_judge_script() -> None:
 
     import main
 
+    main.game.reset()
     client = TestClient(main.app)
     assert client.get("/api/health").json() == {"ok": True}
     assert client.get("/api/state").json()["phase"] == "empty"

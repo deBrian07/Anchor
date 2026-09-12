@@ -15,7 +15,9 @@ export function useBot() {
       try {
         const res = await fetch('/api/state')
         if (!res.ok || cancelled) return
-        setState((await res.json()) as BotState)
+        const data = (await res.json()) as BotState
+        if (cancelled) return
+        setState(data)
       } catch {
         /* API is down; socket retry will pick it up */
       }
@@ -23,6 +25,10 @@ export function useBot() {
 
     function connect() {
       if (cancelled) return
+      if (timer) clearTimeout(timer)
+      const prev = socket
+      socket = null
+      prev?.close()
       const proto = location.protocol === 'https:' ? 'wss' : 'ws'
       const ws = new WebSocket(`${proto}://${location.host}/api/ws`)
       socket = ws
@@ -33,8 +39,8 @@ export function useBot() {
         void loadState()
       }
       ws.onclose = () => {
-        if (cancelled) return
-        if (socket === ws) setConnected(false)
+        if (cancelled || socket !== ws) return
+        setConnected(false)
         const delay = Math.min(4000, 400 * 2 ** retry)
         retry += 1
         timer = setTimeout(connect, delay)
