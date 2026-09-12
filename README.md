@@ -17,4 +17,8 @@ Terminal 2: `npm run dev`
 
 Open http://127.0.0.1:5173
 
+iMessage simulation (no real texts): http://127.0.0.1:5173/#sim
+
+Text **sample** → **I'm still at the ruins** → **skip** → **call** from the fake phone. A number not on `data/allowlist.json` is blocked. **Try real send** always returns `send disabled`.
+
 Demo: **Use sample planner** → **I'm still at the ruins** → DEMO **Skip to 17:01** → **CALL** `tel:+529878724410`.
