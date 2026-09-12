@@ -244,6 +244,15 @@ def test_sim_allowlist_and_no_real_send() -> None:
     assert called["state"]["phase"] == "calling"
     assert any("Elena Vargas" in line for line in called["replies"])
 
+    blank = client.post("/api/sim/text", json={"from": "+15555550111", "text": "   "}).json()
+    assert blank["blocked"] is True
+    assert blank["reason"] == "empty text"
+
+    client.post("/api/action", json={"text": "sample"})
+    helped = client.post("/api/sim/text", json={"from": "+15555550111", "text": "help"}).json()
+    assert helped["state"]["phase"] == "armed"
+    assert helped["state"]["cruise"] is not None
+
     probe = client.post("/api/sim/probe-send", json={"from": "+15555550111", "text": "x"}).json()
     assert probe["reason"] == "send disabled"
     assert probe["delivered"] == "none"

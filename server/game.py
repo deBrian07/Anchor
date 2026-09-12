@@ -15,7 +15,8 @@ ALL_ABOARD = 16 * 3600 + 30 * 60
 SAILS = 17 * 3600
 
 SAMPLE = {"sample", "use sample planner", "planner", "start"}
-RESET = {"reset", "restart", "help"}
+RESET = {"reset", "restart"}
+HELP = {"help", "?"}
 RUINS = {"ruins", "i'm still at the ruins", "im still at the ruins", "still at the ruins", "inland"}
 PIER = {"pier", "at pier", "at the pier"}
 TOWN = {"town", "in town"}
@@ -302,6 +303,11 @@ class Game:
         key = raw.lower()
         if key in RESET:
             return self.reset()
+        if key in HELP:
+            replies: list[str] = []
+            self._say("sample, ruins, or skip.", replies)
+            self._emit()
+            return replies
         if key in SAMPLE:
             return self.arm_sample()
         if key in RUINS:

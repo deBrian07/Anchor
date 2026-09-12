@@ -217,12 +217,21 @@ def sim_peers():
 async def sim_text(request: Request):
     body = await _json_body(request)
     peer = "".join(ch for ch in str(body.get("from") or "") if ch.isdigit() or ch == "+")
-    text = str(body.get("text") or "")
+    text = str(body.get("text") or "").strip()
     if not peer:
         return {
             "ok": False,
             "blocked": True,
             "reason": "no number",
+            "delivered": "none",
+            "replies": [],
+            "state": game.snapshot(),
+        }
+    if not text:
+        return {
+            "ok": False,
+            "blocked": True,
+            "reason": "empty text",
             "delivered": "none",
             "replies": [],
             "state": game.snapshot(),

@@ -6,7 +6,7 @@ import { RecoveryCard } from './components/RecoveryCard'
 import { prettyPhone } from './lib/phone'
 import { useBot } from './lib/sync'
 import { parseHm } from './lib/time'
-import type { Place } from './types'
+import type { BotState, Place } from './types'
 
 const BLOCKED = '+15555550100'
 const CHIPS = [
@@ -17,16 +17,14 @@ const CHIPS = [
   { label: 'reset', text: 'reset' },
 ]
 
-type Notice = { id: number; text: string; bad?: boolean }
-
 export default function Sim() {
-  const { state, connected, demo, call, act } = useBot()
+  const { state, setState, connected, demo, call, act } = useBot()
   const [peers, setPeers] = useState<string[]>([])
   const [from, setFrom] = useState('')
   const [draft, setDraft] = useState('')
-  const [notices, setNotices] = useState<Notice[]>([])
+  const [notice, setNotice] = useState<{ text: string; bad?: boolean } | null>(null)
+  const [busy, setBusy] = useState(false)
   const threadRef = useRef<HTMLDivElement>(null)
-  const seq = useRef(0)
 
   const phase = state?.phase ?? 'empty'
   const cruise = state?.cruise ?? null
@@ -46,27 +44,31 @@ export default function Sim() {
   useEffect(() => {
     const el = threadRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [state?.bubbles, notices])
+  }, [state?.bubbles])
 
-  function note(text: string, bad = false) {
-    seq.current += 1
-    setNotices((rows) => [...rows, { id: seq.current, text, bad }].slice(-8))
-  }
-
-  async function send(text: string) {
+  async function send(text: string, clearDraft = false) {
     const body = text.trim()
-    if (!body || !from) return
-    setDraft('')
+    if (!body || !from || busy) return
+    if (clearDraft) setDraft('')
+    setBusy(true)
     try {
       const res = await fetch('/api/sim/text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ from, text: body }),
       })
-      const data = (await res.json()) as { blocked?: boolean; reason?: string; delivered?: string }
-      if (data.blocked) note("that number isn't on the list.", true)
+      const data = (await res.json()) as {
+        blocked?: boolean
+        state?: BotState
+      }
+      if (data.state) setState(data.state)
+      if (data.blocked) setNotice({ text: "that number isn't on the list.", bad: true })
+      else setNotice(null)
+      if (body.toLowerCase() === 'reset') setNotice(null)
     } catch {
-      note('api is down. run npm run api.', true)
+      setNotice({ text: "api's down. npm run api", bad: true })
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -78,22 +80,22 @@ export default function Sim() {
         body: JSON.stringify({ from, text: 'sim probe' }),
       })
       await res.json()
-      note("didn't send. send is off.", true)
+      setNotice({ text: "didn't send. send is off.", bad: true })
     } catch {
-      note('api is down. run npm run api.', true)
+      setNotice({ text: "api's down. npm run api", bad: true })
     }
   }
 
   async function forgetInbound() {
     await fetch('/api/sim/forget-inbound', { method: 'POST' })
-    note('ok, forgot who texted first.')
+    setNotice({ text: 'cleared.' })
   }
 
   return (
     <div className="sim-shell">
       <p className="sim-banner">
         fake imessage. nothing leaves this laptop.
-        {connected ? '' : ' start the api first.'}
+        {connected ? '' : " api's off."}
       </p>
 
       <section className="sim-phone">
@@ -115,24 +117,13 @@ export default function Sim() {
           </select>
         </label>
 
+        {notice ? <p className={`sim-toast ${notice.bad ? 'bad' : ''}`}>{notice.text}</p> : null}
+
         <div className="sim-thread" ref={threadRef}>
           {(state?.bubbles ?? []).map((row) => (
             <p key={row.id} className={`sim-bubble ${row.from === 'me' ? 'mine' : 'theirs'}`}>
               {row.text}
             </p>
-          ))}
-          {notices.map((row) => (
-            <p key={`n-${row.id}`} className={`sim-system ${row.bad ? 'bad' : ''}`}>
-              {row.text}
-            </p>
-          ))}
-        </div>
-
-        <div className="sim-chips">
-          {CHIPS.map((chip) => (
-            <button key={chip.label} type="button" onClick={() => void send(chip.text)}>
-              {chip.label}
-            </button>
           ))}
         </div>
 
@@ -140,16 +131,28 @@ export default function Sim() {
           className="sim-compose"
           onSubmit={(e) => {
             e.preventDefault()
-            void send(draft)
+            void send(draft, true)
           }}
         >
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="iMessage"
-            autoComplete="off"
-          />
-          <button type="submit">Send</button>
+          <div className="sim-chips">
+            {CHIPS.map((chip) => (
+              <button key={chip.label} type="button" disabled={busy} onClick={() => void send(chip.text)}>
+                {chip.label}
+              </button>
+            ))}
+          </div>
+          <div className="sim-compose-row">
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="iMessage"
+              autoComplete="off"
+              disabled={busy}
+            />
+            <button type="submit" disabled={busy || !draft.trim()}>
+              Send
+            </button>
+          </div>
         </form>
 
         <div className="sim-tools">
@@ -170,7 +173,9 @@ export default function Sim() {
 
         {phase === 'empty' || !cruise ? (
           <div className="sim-empty">
-            <p>text <strong>sample</strong> and i'll pull the sailing.</p>
+            <p>
+              text <strong>sample</strong> and i'll pull the sailing.
+            </p>
           </div>
         ) : (
           <div className="sim-stage">
@@ -187,22 +192,26 @@ export default function Sim() {
         )}
 
         {cruise && state?.show_recovery ? (
-          <RecoveryCard
-            cruise={cruise}
-            phase={phase}
-            onCall={() => void call()}
-            onReset={() => void act('reset')}
-          />
+          <div className="sim-recovery">
+            <RecoveryCard
+              cruise={cruise}
+              phase={phase}
+              onCall={() => void call()}
+              onReset={() => void act('reset')}
+            />
+          </div>
         ) : null}
 
         {cruise && !state?.show_recovery ? (
-          <DemoPanel
-            nowSec={state?.now_sec ?? 15 * 3600 + 50 * 60}
-            skipSec={parseHm(cruise.departure_local) + 60}
-            place={(state?.place as Place) ?? 'town'}
-            onTime={(sec) => void demo({ now_sec: sec })}
-            onPlace={(place) => void demo({ place })}
-          />
+          <div className="sim-demo">
+            <DemoPanel
+              nowSec={state?.now_sec ?? 15 * 3600 + 50 * 60}
+              skipSec={parseHm(cruise.departure_local) + 60}
+              place={(state?.place as Place) ?? 'town'}
+              onTime={(sec) => void demo({ now_sec: sec })}
+              onPlace={(place) => void demo({ place })}
+            />
+          </div>
         ) : null}
       </section>
     </div>

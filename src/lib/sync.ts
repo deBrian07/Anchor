@@ -39,7 +39,6 @@ export function useBot() {
         if (cancelled || socket !== ws) return
         setConnected(true)
         retry = 0
-        void loadState()
       }
       ws.onclose = () => {
         if (cancelled || socket !== ws) return
@@ -113,5 +112,6 @@ export function useBot() {
     }
   }
 
-  return { state, connected, act, demo, call }
+  return { state, setState, connected, act, demo, call }
 }
+
