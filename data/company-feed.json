@@ -1,0 +1,56 @@
+{
+  "mock": true,
+  "provider": "Royal Caribbean International",
+  "api": "https://api.royalcaribbean.example/v1/sailings/HA-WCAR-20260907",
+  "retrieved_at": "2026-09-12T15:50:00-05:00",
+  "sailing": {
+    "id": "HA-WCAR-20260907",
+    "ship": {
+      "name": "Harmony of the Seas",
+      "code": "HA",
+      "imo": 9682875,
+      "line": "Royal Caribbean"
+    },
+    "itinerary": [
+      {
+        "day": 1,
+        "port": "Galveston, Texas",
+        "arrive_local": null,
+        "all_aboard_local": "15:30",
+        "all_clear_local": "16:00"
+      },
+      {
+        "day": 6,
+        "port": "Cozumel, Mexico",
+        "pier": "Puerta Maya",
+        "timezone": "America/Cancun",
+        "arrive_local": "08:00",
+        "all_aboard_local": "16:30",
+        "all_clear_local": "17:00",
+        "today": true
+      },
+      {
+        "day": 7,
+        "port": "Roatán, Honduras",
+        "arrive_local": "08:00",
+        "all_aboard_local": "16:00",
+        "all_clear_local": "16:30"
+      }
+    ]
+  },
+  "guest": {
+    "last_name": "Chen",
+    "cabin": "10204",
+    "booking_ref": "RC-88410204",
+    "citizenship": "US"
+  },
+  "port_ops": {
+    "agent": {
+      "name": "Elena Vargas",
+      "phone": "+529878724410",
+      "phone_display": "+52 987 872 4410",
+      "role": "Royal Caribbean port agent, pier desk",
+      "desk": "Puerta Maya pier desk"
+    }
+  }
+}
