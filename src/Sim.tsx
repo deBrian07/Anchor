@@ -64,10 +64,9 @@ export default function Sim() {
         body: JSON.stringify({ from, text: body }),
       })
       const data = (await res.json()) as { blocked?: boolean; reason?: string; delivered?: string }
-      if (data.blocked) note(`Blocked · ${data.reason ?? 'refused'}`, true)
-      else note(`Delivered in sim only · ${data.delivered ?? 'simulated'}`)
+      if (data.blocked) note("that number isn't on the list.", true)
     } catch {
-      note('API is down. Run npm run api.', true)
+      note('api is down. run npm run api.', true)
     }
   }
 
@@ -78,23 +77,23 @@ export default function Sim() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ from, text: 'sim probe' }),
       })
-      const data = (await res.json()) as { reason?: string; can_text?: boolean }
-      note(`Real send: ${data.reason ?? 'send disabled'} · can_text=${String(data.can_text)}`, true)
+      await res.json()
+      note("didn't send. send is off.", true)
     } catch {
-      note('API is down. Run npm run api.', true)
+      note('api is down. run npm run api.', true)
     }
   }
 
   async function forgetInbound() {
     await fetch('/api/sim/forget-inbound', { method: 'POST' })
-    note('Forgot who texted first this session.')
+    note('ok, forgot who texted first.')
   }
 
   return (
     <div className="sim-shell">
       <p className="sim-banner">
-        Simulation only. Nothing is sent to Messages or SMS.
-        {connected ? '' : ' · start the API from the README'}
+        fake imessage. nothing leaves this laptop.
+        {connected ? '' : ' start the api first.'}
       </p>
 
       <section className="sim-phone">
@@ -105,7 +104,7 @@ export default function Sim() {
         </header>
 
         <label className="sim-peer">
-          Texting as
+          you're texting as
           <select value={from} onChange={(e) => setFrom(e.target.value)}>
             {peers.map((n) => (
               <option key={n} value={n}>
@@ -147,7 +146,7 @@ export default function Sim() {
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="iMessage (simulated)"
+            placeholder="iMessage"
             autoComplete="off"
           />
           <button type="submit">Send</button>
@@ -155,10 +154,10 @@ export default function Sim() {
 
         <div className="sim-tools">
           <button type="button" onClick={() => void probeSend()}>
-            Try real send
+            don't send
           </button>
           <button type="button" onClick={() => void forgetInbound()}>
-            Forget inbound
+            forget who texted
           </button>
         </div>
       </section>
@@ -171,7 +170,7 @@ export default function Sim() {
 
         {phase === 'empty' || !cruise ? (
           <div className="sim-empty">
-            <p>Text <strong>sample</strong> from the phone to arm the sailing.</p>
+            <p>text <strong>sample</strong> and i'll pull the sailing.</p>
           </div>
         ) : (
           <div className="sim-stage">

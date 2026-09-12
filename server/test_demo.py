@@ -217,28 +217,34 @@ def test_sim_allowlist_and_no_real_send() -> None:
     clear_inbound()
     client = TestClient(main.app)
     peers = client.get("/api/sim/peers").json()["peers"]
-    assert "+13092418296" in peers
-    assert "+17632941616" in peers
+    assert "+15555550111" in peers
 
     blocked = client.post("/api/sim/text", json={"from": "+15555550100", "text": "sample"}).json()
     assert blocked["blocked"] is True
     assert client.get("/api/state").json()["phase"] == "empty"
 
-    armed = client.post("/api/sim/text", json={"from": "+13092418296", "text": "sample"}).json()
+    armed = client.post("/api/sim/text", json={"from": "+15555550111", "text": "sample"}).json()
     assert armed["blocked"] is False
     assert armed["delivered"] == "simulated"
     assert armed["state"]["phase"] == "armed"
+    assert any("you're fine" in line for line in armed["replies"])
 
     late = client.post(
         "/api/sim/text",
-        json={"from": "+13092418296", "text": "I'm still at the ruins"},
+        json={"from": "+15555550111", "text": "I'm still at the ruins"},
     ).json()
     assert late["state"]["phase"] == "late"
+    assert any("leave now" in line.lower() for line in late["replies"])
 
-    skipped = client.post("/api/sim/text", json={"from": "+13092418296", "text": "skip"}).json()
+    skipped = client.post("/api/sim/text", json={"from": "+15555550111", "text": "skip"}).json()
     assert skipped["state"]["show_recovery"] is True
+    assert any("ship's gone" in line for line in skipped["replies"])
 
-    probe = client.post("/api/sim/probe-send", json={"from": "+13092418296", "text": "x"}).json()
+    called = client.post("/api/sim/text", json={"from": "+15555550111", "text": "call"}).json()
+    assert called["state"]["phase"] == "calling"
+    assert any("Elena Vargas" in line for line in called["replies"])
+
+    probe = client.post("/api/sim/probe-send", json={"from": "+15555550111", "text": "x"}).json()
     assert probe["reason"] == "send disabled"
     assert probe["delivered"] == "none"
     main.game.reset()
