@@ -71,7 +71,7 @@ class Game:
         self._log_seq = 0
         self.last_peer: str | None = None
         self.recovery_sent = False
-        self.last_imessage: str | None = None
+        self.last_command: str | None = None
         self.listeners: list[Callable[[dict], None]] = []
 
     def snapshot(self) -> dict[str, Any]:
@@ -101,7 +101,7 @@ class Game:
             "logs": self.logs[-6:],
             "bubbles": self.bubbles,
             "last_peer": self.last_peer,
-            "last_imessage": self.last_imessage,
+            "last_command": self.last_command,
             "recovery_sent": self.recovery_sent,
         }
 
@@ -262,7 +262,7 @@ class Game:
             return []
         if handle:
             self.last_peer = handle
-        self.last_imessage = raw
+        self.last_command = raw
         key = raw.lower()
         if key in RESET:
             return self.reset()

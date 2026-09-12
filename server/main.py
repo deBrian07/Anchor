@@ -5,7 +5,6 @@ import base64
 import json
 import os
 import re
-import subprocess
 from copy import deepcopy
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -16,7 +15,6 @@ from fastapi import FastAPI, File, Request, UploadFile, WebSocket, WebSocketDisc
 from fastapi.middleware.cors import CORSMiddleware
 
 from game import game
-from imessage import db_readable, latest_row_id, new_inbound, peer, send_text, status as imessage_status
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "cruise.json"
@@ -42,28 +40,11 @@ async def fanout() -> None:
         clients.discard(ws)
 
 
-def deliver(replies: list[str], handle: str | None = None) -> None:
-    to = peer() or handle or game.last_peer
-    if not to:
-        return
-    for line in replies:
-        send_text(to, line)
-
-
 async def bot_loop() -> None:
-    last = latest_row_id()
     while True:
         await asyncio.sleep(1)
         game.tick()
-        if game.recovery_ready and not game.recovery_sent and game.cruise:
-            game.recovery_sent = True
-            await asyncio.to_thread(deliver, game.recovery_texts(), game.last_peer)
         await fanout()
-        last, msgs = await asyncio.to_thread(new_inbound, last)
-        for msg in msgs:
-            replies = game.handle_text(msg["text"], msg.get("handle"))
-            await asyncio.to_thread(deliver, replies, msg.get("handle"))
-            await fanout()
 
 
 @asynccontextmanager
@@ -184,21 +165,12 @@ def state():
     return game.snapshot()
 
 
-@app.get("/api/host")
-def host():
-    return {
-        "imessage": imessage_status(),
-        "db_readable": db_readable(),
-    }
-
-
-@app.post("/api/imessage/test")
-async def imessage_test():
-    to = peer() or game.last_peer
-    if not to:
-        return {"ok": False, "error": "Set REJOIN_PEER or wait for an inbound iMessage."}
-    err = send_text(to, "Rejoin is live. Text sample, then ruins, then skip.")
-    return {"ok": err is None, "error": err, "peer": to}
+@app.post("/api/action")
+async def action(request: Request):
+    body = await request.json()
+    game.handle_text(str(body.get("text") or ""))
+    await fanout()
+    return game.snapshot()
 
 
 @app.post("/api/demo")

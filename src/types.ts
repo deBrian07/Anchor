@@ -80,17 +80,6 @@ export type BotState = {
   logs: LogLine[]
   bubbles: ChatBubble[]
   last_peer: string | null
-  last_imessage: string | null
+  last_command: string | null
   recovery_sent: boolean
-}
-
-export type HostInfo = {
-  db_readable: boolean
-  imessage: {
-    peer: string | null
-    local_handle: string | null
-    db_readable: boolean
-    can_send: boolean
-    hint: string
-  }
 }

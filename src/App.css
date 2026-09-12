@@ -85,6 +85,30 @@
   font-size: 20px;
 }
 
+.empty-actions,
+.action {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.primary {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  background: #e8c36a;
+  color: #140e06;
+  padding: 16px 28px;
+  font-size: 22px;
+}
+
+.primary.wide {
+  width: min(720px, 100%);
+  font-size: 28px;
+  padding: 20px 28px;
+}
+
 .stage {
   display: grid;
   grid-template-columns: 1fr 1.12fr;

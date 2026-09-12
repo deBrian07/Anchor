@@ -1,14 +1,20 @@
 # Rejoin
 
-iMessage bot on this Mac. Laptop shows the clock and map. Phone talks only through Messages.
+Clock + map for a passenger still ashore. The ship leaves. One tap calls the port agent.
+
+This app does not read iMessage, and it does not text anyone.
+
+If send is ever wired later, it can only reach numbers in `data/allowlist.json` (empty = nobody), and only after that number texts first in the same session.
 
 ```
 npm install && python3 -m pip install -r server/requirements.txt
-export REJOIN_PEER=+1YOURIPHONE    # optional; otherwise first inbound pairs
-export XAI_API_KEY=...             # optional
-npm run api && npm run dev
+export XAI_API_KEY=...    # optional; fixtures work without it
 ```
 
-System Settings → Privacy → Full Disk Access → Terminal, then restart the API. From iPhone, text the Apple ID signed into Messages on this Mac: `sample` → `ruins` → `skip`. Replies come back as iMessages. `tel:+529878724410` after miss.
+Terminal 1: `npm run api`
 
-Sailing times are the mock Royal Caribbean feed in `data/cruise.json`.
+Terminal 2: `npm run dev`
+
+Open http://127.0.0.1:5173
+
+Demo: **Use sample planner** → **I'm still at the ruins** → DEMO **Skip to 17:01** → **CALL** `tel:+529878724410`.

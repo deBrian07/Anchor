@@ -1,0 +1,4 @@
+{
+  "numbers": [],
+  "note": "Empty list means the app cannot text anyone. Add E.164 numbers only, e.g. +15551234567. A number must also text first in this session before any reply."
+}

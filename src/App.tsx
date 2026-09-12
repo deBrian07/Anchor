@@ -6,12 +6,10 @@ import { useBot } from './lib/sync'
 import type { Place } from './types'
 
 export default function App() {
-  const { state, host, connected, demo, call } = useBot()
+  const { state, connected, demo, call, act } = useBot()
   const phase = state?.phase ?? 'empty'
   const cruise = state?.cruise ?? null
   const you = state?.you ?? { lat: 20.4898, lng: -86.9462 }
-  const imsg = host?.imessage
-  const waiting = !cruise
 
   return (
     <div className="app">
@@ -20,31 +18,25 @@ export default function App() {
           <p className="brand">REJOIN</p>
           <h1>{cruise?.ship ?? 'Harmony of the Seas'}</h1>
         </div>
-        <p className={`source ${imsg?.db_readable ? 'live' : 'wait'}`}>
-          {imsg?.db_readable ? 'iMessage inbox live' : 'Grant Full Disk Access to read iMessage'}
+        <p className="source">
+          {cruise?.source?.provider ?? cruise?.cruise_line ?? 'Royal Caribbean'}
           <span>
-            Text {imsg?.local_handle ?? 'this Mac'}
-            {imsg?.peer ? ` · replies to ${imsg.peer}` : ''}
-            {state?.last_imessage ? ` · last: ${state.last_imessage}` : ''}
-            {connected ? '' : ' · run npm run api'}
+            {cruise?.port ?? 'Cozumel, Mexico'}
+            {connected ? '' : ' · run the API from the README'}
           </span>
         </p>
       </header>
 
-      {waiting ? (
+      {phase === 'empty' || !cruise ? (
         <section className="waiting">
-          <p className="empty-kicker">iMessage only</p>
-          <h2>Text this Mac</h2>
-          <p className="empty-copy">
-            From your iPhone, iMessage {imsg?.local_handle ?? 'the Apple ID signed into Messages on this laptop'}.
-            Say <strong>sample</strong>, then <strong>I&apos;m still at the ruins</strong>, then <strong>skip</strong>.
-          </p>
-          {!imsg?.db_readable ? (
-            <p className="empty-copy">
-              System Settings → Privacy &amp; Security → Full Disk Access → enable Terminal, then restart{' '}
-              <code>npm run api</code>.
-            </p>
-          ) : null}
+          <p className="empty-kicker">Still ashore. The ship is leaving.</p>
+          <h2>REJOIN</h2>
+          <p className="empty-copy">Load the mock Royal Caribbean sailing, or drop a planner photo.</p>
+          <div className="empty-actions">
+            <button type="button" className="primary" onClick={() => void act('sample')}>
+              Use sample planner
+            </button>
+          </div>
         </section>
       ) : (
         <main className="stage">
@@ -66,6 +58,14 @@ export default function App() {
           </li>
         ))}
       </ul>
+
+      {phase === 'armed' || phase === 'late' ? (
+        <footer className="action">
+          <button type="button" className="primary wide" onClick={() => void act("I'm still at the ruins")}>
+            I&apos;m still at the ruins
+          </button>
+        </footer>
+      ) : null}
 
       {cruise && state?.show_recovery ? (
         <RecoveryCard cruise={cruise} phase={phase} onCall={() => void call()} />
