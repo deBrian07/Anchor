@@ -1,0 +1,21 @@
+0:00-0:04 You're still at the ruins.
+0:04-0:10 All aboard is in twelve minutes.
+0:10-0:16 The ship does not wait.
+0:16-0:24 Every sailing, someone is late ashore.
+0:24-0:34 The port is loud. The pier is far.
+0:34-0:44 Then the ship leaves.
+0:44-0:52 Rejoin is a text bot for that passenger.
+0:52-1:04 You text. It starts the clock, the map, and one tap to call.
+1:04-1:12 The thread is the product.
+1:12-1:20 sample → ruins → skip → call
+1:20-1:25 Live sim
+1:25-1:36 Text sample. Load the mock sailing.
+1:36-1:48 Text: I'm still at the ruins.
+1:48-2:00 Skip the clock. All aboard has passed.
+2:00-2:10 One tap. Call the port agent.
+2:10-2:20 No iMessage server in this demo.
+2:20-2:32 A local API runs the clock and the map.
+2:32-2:40 Allowlist only. They must text first.
+2:40-2:48 Send stays disabled until you wire it.
+2:48-2:54 You already know how to text.
+2:54-3:00 REJOIN. One text to get back.
