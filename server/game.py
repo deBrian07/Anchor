@@ -38,9 +38,9 @@ def _walk(place: str) -> int:
 
 def _hm(hm: str, fallback: int) -> int:
     try:
-        h, m = str(hm).split(":")
-        return int(h) * 3600 + int(m) * 60
-    except (TypeError, ValueError):
+        parts = str(hm).split(":")
+        return int(parts[0]) * 3600 + int(parts[1]) * 60
+    except (TypeError, ValueError, IndexError):
         return fallback
 
 

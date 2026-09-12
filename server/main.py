@@ -248,8 +248,9 @@ async def extract(
         or not os.environ.get("XAI_API_KEY")
         or not image_b64
     ):
-        replies = game.arm_sample()
-        await fanout()
+        if not game.cruise:
+            game.arm_sample()
+            await fanout()
         return fixture_response()
 
     messages = [
@@ -264,13 +265,15 @@ async def extract(
     try:
         content = await xai_chat(messages, VISION_MODELS)
         if not content:
-            game.arm_sample()
-            await fanout()
+            if not game.cruise:
+                game.arm_sample()
+                await fanout()
             return fixture_response()
         parsed = parse_json_blob(content)
         if not parsed:
-            game.arm_sample()
-            await fanout()
+            if not game.cruise:
+                game.arm_sample()
+                await fanout()
             return fixture_response()
         merged = merge_extract(load_fixture(), parsed)
         game.cruise = merged
@@ -279,8 +282,9 @@ async def extract(
         await fanout()
         return merged
     except Exception:
-        game.arm_sample()
-        await fanout()
+        if not game.cruise:
+            game.arm_sample()
+            await fanout()
         return fixture_response()
 
 

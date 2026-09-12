@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from game import ALL_ABOARD, DEPARTED, Game, SAILS, T40, _phase
+from game import ALL_ABOARD, DEPARTED, Game, SAILS, T40, _hm, _phase
 from text_gate import can_text, send_text
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -144,6 +144,27 @@ def test_skip_before_sample_is_inert() -> None:
     assert snap["show_recovery"] is False
 
 
+def test_hm_accepts_seconds() -> None:
+    assert _hm("18:00:00", SAILS) == 18 * 3600
+    assert _hm("bad", SAILS) == SAILS
+
+
+def test_extract_does_not_reset_live_demo() -> None:
+    from fastapi.testclient import TestClient
+
+    import main
+
+    main.game.reset()
+    client = TestClient(main.app)
+    client.post("/api/action", json={"text": "sample"})
+    client.post("/api/action", json={"text": "I'm still at the ruins"})
+    client.post("/api/extract", json={})
+    snap = client.get("/api/state").json()
+    assert snap["place"] == "ruins"
+    assert snap["phase"] == "late"
+    main.game.reset()
+
+
 def test_constants_match_fixture_clock() -> None:
     assert T40 == 15 * 3600 + 50 * 60
     assert ALL_ABOARD == 16 * 3600 + 30 * 60
@@ -195,6 +216,8 @@ if __name__ == "__main__":
     test_skip_follows_extracted_departure()
     test_after_all_aboard_before_sail_is_late()
     test_skip_before_sample_is_inert()
+    test_hm_accepts_seconds()
+    test_extract_does_not_reset_live_demo()
     test_constants_match_fixture_clock()
     test_http_judge_script()
     print("demo checks passed")

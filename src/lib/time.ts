@@ -5,8 +5,9 @@ export const SLIDER_MIN = 15 * 3600
 export const SLIDER_MAX = 17 * 3600 + 30 * 60
 
 export function parseHm(hm: string): number {
-  const [h, m] = hm.split(':').map(Number)
-  return (h || 0) * 3600 + (m || 0) * 60
+  if (!hm) return 0
+  const parts = hm.split(':').map(Number)
+  return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60
 }
 
 export function formatHm(totalSec: number): string {

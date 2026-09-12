@@ -592,3 +592,19 @@
     font-size: 32px;
   }
 }
+
+@media (max-height: 820px) {
+  .recovery {
+    padding: 20px 28px;
+  }
+
+  .recovery h2 {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  .call {
+    padding: 16px 20px;
+    font-size: 36px;
+  }
+}
