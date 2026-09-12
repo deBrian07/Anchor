@@ -1,0 +1,6 @@
+port,state_country,arrival_time,departure_time
+Seattle,Washington,,17:00
+Ketchikan,Alaska,09:00,17:00
+Sitka,Alaska,09:00,16:00
+Prince Rupert,British Columbia,12:00,20:00
+Seattle,Washington,07:00,
