@@ -15,6 +15,7 @@ from fastapi import FastAPI, File, Request, UploadFile, WebSocket, WebSocketDisc
 from fastapi.middleware.cors import CORSMiddleware
 
 from game import game
+from text_gate import allowlist, can_text, clear_inbound, mark_inbound, send_text
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "cruise.json"
@@ -50,8 +51,8 @@ async def bot_loop() -> None:
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     print(
-        "Rejoin API on 127.0.0.1:8000 — clock/map only. "
-        "Does not read or send phone messages.",
+        "Rejoin API on 127.0.0.1:8000 — clock/map + iMessage sim. "
+        "Does not read or send real phone messages.",
         flush=True,
     )
     task = asyncio.create_task(bot_loop())
@@ -205,6 +206,67 @@ async def call():
     replies = game.mark_calling()
     await fanout()
     return {"replies": replies, "state": game.snapshot()}
+
+
+@app.get("/api/sim/peers")
+def sim_peers():
+    return {"peers": sorted(allowlist()), "send": "simulated only"}
+
+
+@app.post("/api/sim/text")
+async def sim_text(request: Request):
+    body = await _json_body(request)
+    peer = "".join(ch for ch in str(body.get("from") or "") if ch.isdigit() or ch == "+")
+    text = str(body.get("text") or "")
+    if not peer:
+        return {
+            "ok": False,
+            "blocked": True,
+            "reason": "no number",
+            "delivered": "none",
+            "replies": [],
+            "state": game.snapshot(),
+        }
+    if peer not in allowlist():
+        return {
+            "ok": False,
+            "blocked": True,
+            "reason": "not on allowlist",
+            "delivered": "none",
+            "replies": [],
+            "state": game.snapshot(),
+        }
+    mark_inbound(peer)
+    replies = game.handle_text(text)
+    await fanout()
+    return {
+        "ok": True,
+        "blocked": False,
+        "reason": None,
+        "delivered": "simulated",
+        "replies": replies,
+        "state": game.snapshot(),
+    }
+
+
+@app.post("/api/sim/probe-send")
+async def sim_probe_send(request: Request):
+    body = await _json_body(request)
+    peer = "".join(ch for ch in str(body.get("from") or "") if ch.isdigit() or ch == "+")
+    result = send_text(peer, str(body.get("text") or "sim probe"))
+    return {
+        "ok": False,
+        "blocked": True,
+        "reason": result,
+        "can_text": can_text(peer),
+        "delivered": "none",
+    }
+
+
+@app.post("/api/sim/forget-inbound")
+def sim_forget_inbound():
+    clear_inbound()
+    return {"ok": True, "inbound": []}
 
 
 @app.websocket("/api/ws")

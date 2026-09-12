@@ -45,3 +45,7 @@ def send_text(number: str, _body: str) -> str:
     if not can_text(number):
         return "send disabled"
     return "send disabled"
+
+
+def clear_inbound() -> None:
+    _inbound_this_session.clear()

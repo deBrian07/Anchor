@@ -24,10 +24,11 @@ def _imported_modules() -> set[str]:
 
 def test_no_send_surface() -> None:
     imported = _imported_modules()
-    for banned in ("text_gate", "imessage", "subprocess", "sqlite3"):
+    for banned in ("imessage", "subprocess", "sqlite3"):
         assert banned not in imported
     assert send_text("+15551234567", "hello") == "send disabled"
     assert can_text("+15551234567") is False
+    assert send_text("+13092418296", "hello") == "send disabled"
 
 
 def test_judge_script() -> None:
@@ -206,6 +207,44 @@ def test_constants_match_fixture_clock() -> None:
     assert DEPARTED == 17 * 3600 + 60
 
 
+def test_sim_allowlist_and_no_real_send() -> None:
+    from fastapi.testclient import TestClient
+
+    import main
+    from text_gate import clear_inbound
+
+    main.game.reset()
+    clear_inbound()
+    client = TestClient(main.app)
+    peers = client.get("/api/sim/peers").json()["peers"]
+    assert "+13092418296" in peers
+    assert "+17632941616" in peers
+
+    blocked = client.post("/api/sim/text", json={"from": "+15555550100", "text": "sample"}).json()
+    assert blocked["blocked"] is True
+    assert client.get("/api/state").json()["phase"] == "empty"
+
+    armed = client.post("/api/sim/text", json={"from": "+13092418296", "text": "sample"}).json()
+    assert armed["blocked"] is False
+    assert armed["delivered"] == "simulated"
+    assert armed["state"]["phase"] == "armed"
+
+    late = client.post(
+        "/api/sim/text",
+        json={"from": "+13092418296", "text": "I'm still at the ruins"},
+    ).json()
+    assert late["state"]["phase"] == "late"
+
+    skipped = client.post("/api/sim/text", json={"from": "+13092418296", "text": "skip"}).json()
+    assert skipped["state"]["show_recovery"] is True
+
+    probe = client.post("/api/sim/probe-send", json={"from": "+13092418296", "text": "x"}).json()
+    assert probe["reason"] == "send disabled"
+    assert probe["delivered"] == "none"
+    main.game.reset()
+    clear_inbound()
+
+
 def test_http_judge_script() -> None:
     from fastapi.testclient import TestClient
 
@@ -256,5 +295,6 @@ if __name__ == "__main__":
     test_recover_does_not_mutate_live_cruise()
     test_merge_cruise_partial_keeps_map()
     test_constants_match_fixture_clock()
+    test_sim_allowlist_and_no_real_send()
     test_http_judge_script()
     print("demo checks passed")
