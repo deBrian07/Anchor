@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { BotState } from '../types'
 
 export function useBot() {
   const [state, setState] = useState<BotState | null>(null)
   const [connected, setConnected] = useState(false)
+  const actSeq = useRef(0)
+  const demoSeq = useRef(0)
+  const callSeq = useRef(0)
 
   useEffect(() => {
     let cancelled = false
@@ -69,28 +72,44 @@ export function useBot() {
   }, [])
 
   async function act(text: string) {
-    const res = await fetch('/api/action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    })
-    if (res.ok) setState((await res.json()) as BotState)
+    const id = ++actSeq.current
+    try {
+      const res = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      if (!res.ok || id !== actSeq.current) return
+      setState((await res.json()) as BotState)
+    } catch {
+      /* keep last good state */
+    }
   }
 
   async function demo(body: { now_sec?: number; place?: string }) {
-    const res = await fetch('/api/demo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    if (res.ok) setState((await res.json()) as BotState)
+    const id = ++demoSeq.current
+    try {
+      const res = await fetch('/api/demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok || id !== demoSeq.current) return
+      setState((await res.json()) as BotState)
+    } catch {
+      /* keep last good state */
+    }
   }
 
   async function call() {
-    const res = await fetch('/api/call', { method: 'POST' })
-    if (res.ok) {
+    const id = ++callSeq.current
+    try {
+      const res = await fetch('/api/call', { method: 'POST' })
+      if (!res.ok || id !== callSeq.current) return
       const data = (await res.json()) as { state: BotState }
       setState(data.state)
+    } catch {
+      /* keep last good state */
     }
   }
 

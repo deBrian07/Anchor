@@ -31,6 +31,8 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
     const map = L.map(el, {
       zoomControl: false,
       attributionControl: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
       minZoom: 11,
       maxZoom: 16,
     })
@@ -93,11 +95,17 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
       { padding: [40, 40] },
     )
 
+    const ro = new ResizeObserver(() => {
+      map.invalidateSize()
+    })
+    ro.observe(el)
+
     return () => {
-      map.remove()
+      ro.disconnect()
       mapRef.current = null
       youRef.current = null
       shipRef.current = null
+      map.remove()
     }
   }, [])
 
@@ -108,9 +116,9 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
     const cur = marker.getLatLng()
     if (Math.abs(cur.lat - you.lat) > 1e-6 || Math.abs(cur.lng - you.lng) > 1e-6) {
       marker.setLatLng([you.lat, you.lng])
-      map.panTo([you.lat, you.lng], { animate: true, duration: 0.6 })
+      if (!departed) map.panTo([you.lat, you.lng], { animate: true, duration: 0.6 })
     }
-  }, [you])
+  }, [you, departed])
 
   useEffect(() => {
     const ship = shipRef.current
@@ -122,17 +130,17 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
     const end = L.latLng(mapPts.ship_departed.lat, mapPts.ship_departed.lng)
     if (!departed) {
       ship.setLatLng(start)
-      const el = ship.getElement()
-      el?.classList.remove('sailing')
+      ship.getElement()?.classList.remove('sailing')
       return
     }
 
-    const el = ship.getElement()
-    el?.classList.add('sailing')
+    let alive = true
+    let raf = 0
     const t0 = performance.now()
     const dur = 2800
-    let raf = 0
     const tick = (now: number) => {
+      if (!alive) return
+      ship.getElement()?.classList.add('sailing')
       const t = Math.min(1, (now - t0) / dur)
       const ease = 1 - (1 - t) ** 3
       const lat = start.lat + (end.lat - start.lat) * ease
@@ -149,7 +157,10 @@ export function PortMap({ cruise, you, departed, onYouChange }: Props) {
       ],
       { padding: [48, 48], animate: true },
     )
-    return () => cancelAnimationFrame(raf)
+    return () => {
+      alive = false
+      cancelAnimationFrame(raf)
+    }
   }, [departed])
 
   return (

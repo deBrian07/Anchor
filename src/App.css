@@ -87,6 +87,8 @@
 
 .empty-actions,
 .action {
+  position: relative;
+  z-index: 45;
   display: flex;
   justify-content: center;
   margin-top: 8px;
@@ -412,6 +414,9 @@
 }
 
 .call {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -590,6 +595,11 @@
 
   .call {
     font-size: 32px;
+  }
+
+  .demo {
+    top: 88px;
+    bottom: auto;
   }
 }
 
