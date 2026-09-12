@@ -41,6 +41,16 @@
   font-size: 14px;
 }
 
+.sim-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: #e8c36a;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
 .source.live {
   color: #30d158;
 }
@@ -256,6 +266,12 @@
 
 .map-canvas {
   z-index: 1;
+}
+
+.map-canvas,
+.map-canvas .leaflet-container {
+  height: 100%;
+  width: 100%;
 }
 
 .map-caption {

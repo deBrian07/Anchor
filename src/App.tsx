@@ -25,6 +25,9 @@ export default function App() {
             {cruise?.port ?? 'Cozumel, Mexico'}
             {connected ? '' : ' · run the API from the README'}
           </span>
+          <a className="sim-link" href="#sim">
+            iMessage sim
+          </a>
         </p>
       </header>
 
