@@ -13,39 +13,39 @@ export function RecoveryCard({ cruise, phase, onCall, onReset }: Props) {
 
   return (
     <section className={`recovery ${calling ? 'calling' : ''}`}>
-      <p className="recovery-kicker">you missed it · {cruise.cruise_line}</p>
-      <h2>call the pier desk</h2>
+      <p className="recovery-kicker">you missed it</p>
+      <h2>{agent.name}</h2>
       <ul className="facts">
         <li>
-          <span>Passport</span>
+          <span>passport</span>
           <strong>{cruise.passenger.passport}</strong>
         </li>
         <li>
-          <span>Next reachable port</span>
+          <span>next port</span>
           <strong>
             {cruise.next_port}
             <em>{cruise.next_port_arrival_note}</em>
           </strong>
         </li>
         <li>
-          <span>Port agent</span>
+          <span>who</span>
           <strong>
             {agent.name}
             <em>{agent.role}</em>
           </strong>
         </li>
         <li>
-          <span>Phone</span>
+          <span>phone</span>
           <strong>{agent.phone_display}</strong>
         </li>
         <li>
-          <span>Join</span>
+          <span>backup</span>
           <strong>{cruise.fallback_transport}</strong>
         </li>
       </ul>
 
       <a className="call" href={`tel:${agent.phone}`} onClick={onCall}>
-        CALL PORT AGENT
+        call {agent.name.split(' ')[0]}
         <span>{agent.phone_display}</span>
       </a>
 
@@ -53,11 +53,11 @@ export function RecoveryCard({ cruise, phase, onCall, onReset }: Props) {
         <p className="script-label">say this</p>
         <ol>
           <li>
-            {cruise.ship}, booking {cruise.passenger.booking_name}, cabin {cruise.passenger.cabin}.
+            {cruise.ship}, {cruise.passenger.booking_name}, cabin {cruise.passenger.cabin}.
           </li>
-          <li>I missed all-aboard at {cruise.port}. Passport is in the cabin.</li>
-          <li>I need the next-port join instructions.</li>
-          <li>Where do I meet you.</li>
+          <li>missed all-aboard at {cruise.port}. passport&apos;s in the cabin.</li>
+          <li>need next-port join.</li>
+          <li>where do you meet.</li>
         </ol>
       </div>
 

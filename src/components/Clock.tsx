@@ -66,19 +66,19 @@ export function Clock({ phase, nowSec, allAboard, departure, walkMin, departed }
         <div className={`deadline ${allClosed ? 'struck' : ''}`}>
           <span className="kicker">All aboard</span>
           <strong>{allAboard}</strong>
-          <em>{allClosed ? 'CLOSED' : formatCountdown(remainAll)}</em>
+          <em>{allClosed ? 'closed' : formatCountdown(remainAll)}</em>
         </div>
         <div className="deadline sail">
           <span className="kicker">Ship leaves</span>
           <strong>{departure}</strong>
-          <em>{dead ? 'GONE' : formatCountdown(remainDep)}</em>
+          <em>{dead ? 'gone' : formatCountdown(remainDep)}</em>
         </div>
-        {phase === 'late' ? <p className="leave-now">LEAVE NOW</p> : null}
-        {dead ? <p className="leave-now">SHIP LEFT</p> : null}
+        {phase === 'late' ? <p className="leave-now">leave</p> : null}
+        {dead ? <p className="leave-now">gone</p> : null}
         {phase === 'armed' || phase === 'late' ? (
           <p className="walk-note">
-            Walk to pier {Math.round(walkMin)} min
-            {phase === 'late' ? ' · you will miss all-aboard' : ''}
+            {Math.round(walkMin)} min to pier
+            {phase === 'late' ? ". you'll miss all-aboard." : ''}
           </p>
         ) : null}
       </div>

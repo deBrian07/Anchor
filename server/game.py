@@ -286,7 +286,7 @@ class Game:
             f"call {a['name']}. {a['phone_display']}. pier desk.",
             f"tell them {c['ship']}, {p['booking_name']}, cabin {p['cabin']}. "
             f"you missed all-aboard. passport's in the cabin. you need the next-port join.",
-            f"if that dies: {c['fallback_transport']}",
+            f"otherwise first flight CUN → RTB.",
         ]
 
     def reset(self) -> list[str]:

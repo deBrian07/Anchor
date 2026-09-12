@@ -108,10 +108,10 @@ export default function Sim() {
           <select value={from} onChange={(e) => setFrom(e.target.value)}>
             {peers.map((n) => (
               <option key={n} value={n}>
-                {prettyPhone(n)} (allowlist)
+                {prettyPhone(n)}
               </option>
             ))}
-            <option value={BLOCKED}>{prettyPhone(BLOCKED)} (not allowed)</option>
+            <option value={BLOCKED}>{prettyPhone(BLOCKED)} (blocked)</option>
           </select>
         </label>
 
