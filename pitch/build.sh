@@ -46,7 +46,7 @@ if [[ -f "$DEMO" ]]; then
   "${PY[@]}" "$S/cut.py" "$DEMO" --start "$DEMO_START" --end "$DEMO_END" --accurate \
     "${common[@]}" -o "$WORK/demo_cut.mp4"
   "${PY[@]}" "$S/fit.py" "$WORK/demo_cut.mp4" --width 1920 --height 1080 --fps 30 --fit pad \
-    --pad-color 0C1118 "${common[@]}" -o "$WORK/demo_fit.mp4"
+    --pad-color 0x0C1118 "${common[@]}" -o "$WORK/demo_fit.mp4"
   "${PY[@]}" "$S/freeze.py" "$WORK/demo_fit.mp4" --hold 24 --mode extend \
     "${common[@]}" -o "$WORK/06_demo.mp4"
 else
