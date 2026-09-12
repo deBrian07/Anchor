@@ -5,7 +5,6 @@ import base64
 import json
 import os
 import re
-import socket
 import subprocess
 from copy import deepcopy
 from contextlib import asynccontextmanager
@@ -44,7 +43,7 @@ async def fanout() -> None:
 
 
 def deliver(replies: list[str], handle: str | None = None) -> None:
-    to = peer() or handle
+    to = peer() or handle or game.last_peer
     if not to:
         return
     for line in replies:
@@ -56,10 +55,13 @@ async def bot_loop() -> None:
     while True:
         await asyncio.sleep(1)
         game.tick()
+        if game.recovery_ready and not game.recovery_sent and game.cruise:
+            game.recovery_sent = True
+            await asyncio.to_thread(deliver, game.recovery_texts(), game.last_peer)
         await fanout()
         last, msgs = await asyncio.to_thread(new_inbound, last)
         for msg in msgs:
-            replies = game.handle_text(msg["text"])
+            replies = game.handle_text(msg["text"], msg.get("handle"))
             await asyncio.to_thread(deliver, replies, msg.get("handle"))
             await fanout()
 
@@ -152,24 +154,6 @@ def image_data_url(raw: bytes, content_type: str = "image/jpeg") -> str:
     return f"data:{content_type};base64,{b64}"
 
 
-def lan_ips() -> list[str]:
-    found: list[str] = []
-    for iface in ("en0", "en1"):
-        try:
-            r = subprocess.run(["ipconfig", "getifaddr", iface], capture_output=True, text=True)
-            ip = r.stdout.strip()
-            if ip:
-                found.append(ip)
-        except Exception:
-            pass
-    if not found:
-        try:
-            found.append(socket.gethostbyname(socket.gethostname()))
-        except Exception:
-            pass
-    return found
-
-
 EXTRACT_PROMPT = (
     "Extract ONLY these fields from the cruise schedule image as JSON with no other keys: "
     "ship, port, all_aboard_local, departure_local, next_port, timezone. "
@@ -202,10 +186,7 @@ def state():
 
 @app.get("/api/host")
 def host():
-    ips = lan_ips()
     return {
-        "ips": ips,
-        "phone_url": f"http://{ips[0]}:5173" if ips else "http://localhost:5173",
         "imessage": imessage_status(),
         "db_readable": db_readable(),
     }
@@ -213,19 +194,11 @@ def host():
 
 @app.post("/api/imessage/test")
 async def imessage_test():
-    to = peer()
+    to = peer() or game.last_peer
     if not to:
-        return {"ok": False, "error": "Set REJOIN_PEER to your iPhone iMessage."}
-    err = send_text(to, "Rejoin is live on your Mac. Text sample, ruins, or skip.")
+        return {"ok": False, "error": "Set REJOIN_PEER or wait for an inbound iMessage."}
+    err = send_text(to, "Rejoin is live. Text sample, then ruins, then skip.")
     return {"ok": err is None, "error": err, "peer": to}
-
-
-@app.post("/api/inbox")
-async def inbox(request: Request):
-    body = await request.json()
-    replies = game.handle_text(str(body.get("text") or ""))
-    await fanout()
-    return {"replies": replies, "state": game.snapshot()}
 
 
 @app.post("/api/demo")

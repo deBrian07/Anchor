@@ -31,18 +31,6 @@ export function useBot() {
     return () => socket.close()
   }, [])
 
-  async function send(text: string) {
-    const res = await fetch('/api/inbox', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    })
-    if (res.ok) {
-      const data = (await res.json()) as { state: BotState }
-      setState(data.state)
-    }
-  }
-
   async function demo(body: { now_sec?: number; place?: string }) {
     const res = await fetch('/api/demo', {
       method: 'POST',
@@ -60,15 +48,5 @@ export function useBot() {
     }
   }
 
-  async function upload(file: File) {
-    const body = new FormData()
-    body.append('image', file)
-    const res = await fetch('/api/extract', { method: 'POST', body })
-    if (res.ok) {
-      const snap = await fetch('/api/state')
-      if (snap.ok) setState((await snap.json()) as BotState)
-    }
-  }
-
-  return { state, host, connected, send, demo, call, upload }
+  return { state, host, connected, demo, call }
 }

@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "api": "python3 -m uvicorn main:app --app-dir server --reload --host 0.0.0.0 --port 8000",
+    "dev": "vite",
+    "api": "python3 -m uvicorn main:app --app-dir server --reload --host 127.0.0.1 --port 8000",
     "start": "concurrently -n api,web -c cyan,magenta \"npm run api\" \"npm run dev\"",
     "build": "tsc -b && vite build",
     "preview": "vite preview"

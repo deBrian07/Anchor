@@ -1,135 +1,75 @@
-import { useState } from 'react'
 import { Clock } from './components/Clock'
 import { DemoPanel } from './components/DemoPanel'
-import { Bubble, Messages } from './components/Messages'
 import { PortMap } from './components/PortMap'
 import { RecoveryCard } from './components/RecoveryCard'
 import { useBot } from './lib/sync'
 import type { Place } from './types'
 
 export default function App() {
-  const { state, host, connected, send, demo, call, upload } = useBot()
-  const [draft, setDraft] = useState('')
-
+  const { state, host, connected, demo, call } = useBot()
   const phase = state?.phase ?? 'empty'
   const cruise = state?.cruise ?? null
   const you = state?.you ?? { lat: 20.4898, lng: -86.9462 }
-
-  async function submit(text: string) {
-    const t = text.trim()
-    if (!t) return
-    setDraft('')
-    try {
-      await send(t)
-    } catch {
-      /* api offline */
-    }
-  }
+  const imsg = host?.imessage
+  const waiting = !cruise
 
   return (
     <div className="app">
-      {host ? (
-        <p className="hostbar">
-          Phone: open <strong>{host.phone_url}</strong>
-          {host.imessage.peer ? ` · iMessage replies to ${host.imessage.peer}` : ' · set REJOIN_PEER to text from Messages'}
-          {host.db_readable ? ' · inbox live' : ' · inbox needs Full Disk Access'}
-          {connected ? '' : ' · server offline, run npm run api'}
+      <header className="top">
+        <div>
+          <p className="brand">REJOIN</p>
+          <h1>{cruise?.ship ?? 'Harmony of the Seas'}</h1>
+        </div>
+        <p className={`source ${imsg?.db_readable ? 'live' : 'wait'}`}>
+          {imsg?.db_readable ? 'iMessage inbox live' : 'Grant Full Disk Access to read iMessage'}
+          <span>
+            Text {imsg?.local_handle ?? 'this Mac'}
+            {imsg?.peer ? ` · replies to ${imsg.peer}` : ''}
+            {state?.last_imessage ? ` · last: ${state.last_imessage}` : ''}
+            {connected ? '' : ' · run npm run api'}
+          </span>
         </p>
+      </header>
+
+      {waiting ? (
+        <section className="waiting">
+          <p className="empty-kicker">iMessage only</p>
+          <h2>Text this Mac</h2>
+          <p className="empty-copy">
+            From your iPhone, iMessage {imsg?.local_handle ?? 'the Apple ID signed into Messages on this laptop'}.
+            Say <strong>sample</strong>, then <strong>I&apos;m still at the ruins</strong>, then <strong>skip</strong>.
+          </p>
+          {!imsg?.db_readable ? (
+            <p className="empty-copy">
+              System Settings → Privacy &amp; Security → Full Disk Access → enable Terminal, then restart{' '}
+              <code>npm run api</code>.
+            </p>
+          ) : null}
+        </section>
       ) : (
-        <p className="hostbar">Run <code>npm run api</code> on this Mac, then text from your phone at the LAN URL.</p>
+        <main className="stage">
+          <Clock
+            phase={phase}
+            nowSec={state?.now_sec ?? 0}
+            allAboard={cruise.all_aboard_local}
+            departure={cruise.departure_local}
+            walkMin={state?.walk_min ?? 12}
+          />
+          <PortMap cruise={cruise} you={you} departed={Boolean(state?.departed)} onYouChange={() => undefined} />
+        </main>
       )}
 
-      <Messages
-        composer={
-          <footer className="imsg-compose">
-            <div className="chips">
-              {phase === 'empty' ? (
-                <button type="button" onClick={() => void submit('sample')}>
-                  Use sample planner
-                </button>
-              ) : null}
-              {phase === 'armed' || phase === 'late' ? (
-                <button type="button" onClick={() => void submit("I'm still at the ruins")}>
-                  I&apos;m still at the ruins
-                </button>
-              ) : null}
-              {state?.show_recovery && cruise ? (
-                <a className="chip-call" href={`tel:${cruise.port_agent.phone}`} onClick={() => void call()}>
-                  CALL PORT AGENT
-                </a>
-              ) : null}
-            </div>
-            <form
-              className="composer"
-              onSubmit={(e) => {
-                e.preventDefault()
-                void submit(draft)
-              }}
-            >
-              <label className="attach">
-                +
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) void upload(file)
-                  }}
-                />
-              </label>
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="iMessage"
-                enterKeyHint="send"
-              />
-              <button type="submit" className="send" disabled={!draft.trim()}>
-                ↑
-              </button>
-            </form>
-          </footer>
-        }
-      >
-        {(state?.bubbles ?? []).map((b) => (
-          <Bubble key={b.id} from={b.from}>
-            {b.photo ? <img className="planner-shot" src={b.photo} alt="" /> : null}
-            {b.text}
-          </Bubble>
-        ))}
-
+      <ul className="log">
         {(state?.logs ?? []).map((line) => (
-          <p key={line.id} className={`imsg-status ${line.level}`}>
+          <li key={line.id} className={line.level}>
             {line.text}
-          </p>
+          </li>
         ))}
+      </ul>
 
-        {cruise ? (
-          <div className="rich">
-            <Clock
-              phase={phase}
-              nowSec={state?.now_sec ?? 0}
-              allAboard={cruise.all_aboard_local}
-              departure={cruise.departure_local}
-              walkMin={state?.walk_min ?? 12}
-            />
-            <PortMap
-              cruise={cruise}
-              you={you}
-              departed={Boolean(state?.departed)}
-              onYouChange={() => {
-                /* phone pin stays on presets; drag also maps to ruins if far */
-              }}
-            />
-          </div>
-        ) : null}
-
-        {cruise && state?.show_recovery ? (
-          <div className="rich recovery-wrap">
-            <RecoveryCard cruise={cruise} phase={phase} onCall={() => void call()} />
-          </div>
-        ) : null}
-      </Messages>
+      {cruise && state?.show_recovery ? (
+        <RecoveryCard cruise={cruise} phase={phase} onCall={() => void call()} />
+      ) : null}
 
       <DemoPanel
         nowSec={state?.now_sec ?? 15 * 3600 + 50 * 60}

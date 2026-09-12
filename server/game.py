@@ -69,6 +69,9 @@ class Game:
         ]
         self._seq = 1
         self._log_seq = 0
+        self.last_peer: str | None = None
+        self.recovery_sent = False
+        self.last_imessage: str | None = None
         self.listeners: list[Callable[[dict], None]] = []
 
     def snapshot(self) -> dict[str, Any]:
@@ -97,6 +100,9 @@ class Game:
             "photo": self.photo,
             "logs": self.logs[-6:],
             "bubbles": self.bubbles,
+            "last_peer": self.last_peer,
+            "last_imessage": self.last_imessage,
+            "recovery_sent": self.recovery_sent,
         }
 
     def _emit(self) -> dict[str, Any]:
@@ -141,6 +147,7 @@ class Game:
         if self.now_sec < SAILS:
             self.missed_at = None
             self.recovery_ready = False
+            self.recovery_sent = False
             self.calling = False
         self._emit()
         return replies
@@ -175,6 +182,7 @@ class Game:
         self.calling = False
         self.said_ruins = False
         self.recovery_ready = False
+        self.recovery_sent = False
         self.missed_at = None
         self._bubble("me", "Use sample planner", photo="/sample-planner.png")
         c = self.cruise
@@ -248,10 +256,13 @@ class Game:
         self._emit()
         return [self.bubbles[0]["text"]]
 
-    def handle_text(self, text: str) -> list[str]:
+    def handle_text(self, text: str, handle: str | None = None) -> list[str]:
         raw = (text or "").strip()
         if not raw:
             return []
+        if handle:
+            self.last_peer = handle
+        self.last_imessage = raw
         key = raw.lower()
         if key in RESET:
             return self.reset()
@@ -265,10 +276,7 @@ class Game:
             return self.set_place("town")
         if key in SKIP:
             self._bubble("me", raw)
-            replies = self.set_time(DEPARTED)
-            later = self.recovery_texts()
-            # ship-leave first; recovery follows on the laptop after the animation
-            return replies
+            return self.set_time(DEPARTED)
         if key in CALL:
             self._bubble("me", raw)
             return self.mark_calling()
