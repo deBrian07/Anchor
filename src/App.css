@@ -354,10 +354,11 @@
 .recovery {
   position: fixed;
   inset: 18px;
-  z-index: 20;
+  z-index: 50;
   padding: 36px 48px;
   display: grid;
   align-content: start;
+  overflow-y: auto;
   background: #0b0d11;
   animation: rise 0.55s ease-out;
 }

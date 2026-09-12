@@ -71,12 +71,14 @@ export default function App() {
         <RecoveryCard cruise={cruise} phase={phase} onCall={() => void call()} />
       ) : null}
 
-      <DemoPanel
-        nowSec={state?.now_sec ?? 15 * 3600 + 50 * 60}
-        place={(state?.place as Place) ?? 'town'}
-        onTime={(sec) => void demo({ now_sec: sec })}
-        onPlace={(place) => void demo({ place })}
-      />
+      {state?.show_recovery ? null : (
+        <DemoPanel
+          nowSec={state?.now_sec ?? 15 * 3600 + 50 * 60}
+          place={(state?.place as Place) ?? 'town'}
+          onTime={(sec) => void demo({ now_sec: sec })}
+          onPlace={(place) => void demo({ place })}
+        />
+      )}
     </div>
   )
 }

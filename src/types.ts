@@ -79,7 +79,5 @@ export type BotState = {
   photo: string | null
   logs: LogLine[]
   bubbles: ChatBubble[]
-  last_peer: string | null
   last_command: string | null
-  recovery_sent: boolean
 }

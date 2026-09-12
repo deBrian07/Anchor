@@ -40,6 +40,8 @@ def can_text(number: str) -> bool:
     return n in _inbound_this_session
 
 
-def send_text(_number: str, _body: str) -> str:
-    """Hard refuse. This app does not send iMessage/SMS."""
+def send_text(number: str, _body: str) -> str:
+    """Hard refuse. Empty allowlist or no inbound this session means no send."""
+    if not can_text(number):
+        return "send disabled"
     return "send disabled"

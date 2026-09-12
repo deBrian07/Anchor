@@ -57,7 +57,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,7 +71,7 @@ def load_fixture() -> dict[str, Any]:
 
 def fixture_response(extra: Optional[dict] = None) -> dict[str, Any]:
     out = deepcopy(load_fixture())
-    out["source"] = "fixture"
+    out["source_tag"] = "fixture"
     if extra:
         out.update(extra)
     return out
@@ -99,7 +99,7 @@ def merge_extract(base: dict, extracted: dict) -> dict:
     for k in EXTRACT_KEYS:
         if k in extracted and extracted[k]:
             out[k] = extracted[k]
-    out["source"] = "grok"
+    out["source_tag"] = "grok"
     return out
 
 

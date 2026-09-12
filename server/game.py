@@ -64,13 +64,11 @@ class Game:
             {
                 "id": 1,
                 "from": "them",
-                "text": "Text me today's planner photo, or say sample. I'll pull your sailing from the cruise line.",
+                "text": "Load the sample planner to pull the mock sailing.",
             }
         ]
         self._seq = 1
         self._log_seq = 0
-        self.last_peer: str | None = None
-        self.recovery_sent = False
         self.last_command: str | None = None
         self.listeners: list[Callable[[dict], None]] = []
 
@@ -100,9 +98,7 @@ class Game:
             "photo": self.photo,
             "logs": self.logs[-6:],
             "bubbles": self.bubbles,
-            "last_peer": self.last_peer,
             "last_command": self.last_command,
-            "recovery_sent": self.recovery_sent,
         }
 
     def _emit(self) -> dict[str, Any]:
@@ -139,15 +135,16 @@ class Game:
     def set_time(self, now_sec: int) -> list[str]:
         self.now_sec = int(now_sec)
         replies: list[str] = []
-        if self.cruise and self.now_sec >= SAILS and self.missed_at is None:
-            self.missed_at = time.time()
-            self._log("alert", "ship departed")
-            self._bubble("them", "The ship is leaving the pier.")
-            replies.append("The ship is leaving the pier.")
+        if self.cruise and self.now_sec >= SAILS:
+            if self.missed_at is None:
+                self.missed_at = time.time()
+                self._log("alert", "ship departed")
+                self._bubble("them", "The ship is leaving the pier.")
+                replies.append("The ship is leaving the pier.")
+            self.recovery_ready = True
         if self.now_sec < SAILS:
             self.missed_at = None
             self.recovery_ready = False
-            self.recovery_sent = False
             self.calling = False
         self._emit()
         return replies
@@ -182,7 +179,6 @@ class Game:
         self.calling = False
         self.said_ruins = False
         self.recovery_ready = False
-        self.recovery_sent = False
         self.missed_at = None
         self._bubble("me", "Use sample planner", photo="/sample-planner.png")
         c = self.cruise
@@ -191,9 +187,11 @@ class Game:
             f"sails {c['departure_local']}."
         )
         self._bubble("them", line)
+        src = c.get("source")
+        sailing_id = src.get("sailing_id", "port-ops") if isinstance(src, dict) else "port-ops"
         self._log(
             "info",
-            f"{c['cruise_line']} feed {c.get('source', {}).get('sailing_id', 'port-ops')}: "
+            f"{c['cruise_line']} feed {sailing_id}: "
             f"all aboard {c['all_aboard_local']} · sails {c['departure_local']}",
         )
         self._log("info", "extracted times from sample planner")
@@ -256,12 +254,10 @@ class Game:
         self._emit()
         return [self.bubbles[0]["text"]]
 
-    def handle_text(self, text: str, handle: str | None = None) -> list[str]:
+    def handle_text(self, text: str) -> list[str]:
         raw = (text or "").strip()
         if not raw:
             return []
-        if handle:
-            self.last_peer = handle
         self.last_command = raw
         key = raw.lower()
         if key in RESET:
