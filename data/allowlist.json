@@ -1,4 +1,4 @@
 {
   "numbers": ["+13092418296", "+17632941616", "+15555550111"],
-  "note": "Only these E.164 numbers can ever be considered. A number must also text first in this session before any reply. Send is still disabled in code."
+  "note": "Only these E.164 numbers can ever be considered. +15555550111 is a fake number for the local sim. A number must also text first in this session before any reply. Send is still disabled in code."
 }
